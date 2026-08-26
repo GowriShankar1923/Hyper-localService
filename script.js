@@ -1583,7 +1583,10 @@ const logoutBtn = document.getElementById('logout-btn');
             // 3-dots menu logic
             document.querySelectorAll(`#${containerId} .toggle-menu`).forEach(btn => {
                 btn.onclick = (e) => {
-                    const dropdown = e.target.nextElementSibling;
+                    const menuContainer = e.target.closest('.booking-menu');
+                    if (!menuContainer) return;
+                    const dropdown = menuContainer.querySelector('.menu-dropdown');
+                    if (!dropdown) return;
                     const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
                     // Close all other dropdowns
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
@@ -1947,7 +1950,10 @@ const logoutBtn = document.getElementById('logout-btn');
             // 3-dots menu logic
             document.querySelectorAll('.toggle-menu').forEach(btn => {
                 btn.onclick = (e) => {
-                    const dropdown = e.target.nextElementSibling;
+                    const menuContainer = e.target.closest('.booking-menu');
+                    if (!menuContainer) return;
+                    const dropdown = menuContainer.querySelector('.menu-dropdown');
+                    if (!dropdown) return;
                     const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
                     // Close all other dropdowns
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
