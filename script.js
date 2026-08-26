@@ -1085,8 +1085,12 @@ const logoutBtn = document.getElementById('logout-btn');
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 if (data.role === 'worker' || data.role === 'both') {
-                    if (data.service && data.location && location && data.location.toLowerCase().trim() === location.toLowerCase().trim()) {
-                        workers.push({ id: doc.id, ...data });
+                    if (data.service && data.location && location) {
+                        const workerLoc = data.location.toLowerCase().trim();
+                        const userLoc = location.toLowerCase().trim();
+                        if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
+                            workers.push({ id: doc.id, ...data });
+                        }
                     }
                 }
             });
@@ -1265,8 +1269,12 @@ const logoutBtn = document.getElementById('logout-btn');
             workers = [];
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if ((data.role === 'worker' || data.role === 'both') && data.location && data.location.toLowerCase().trim() === cleanLocation.toLowerCase()) {
-                    workers.push({ id: data.uid, ...data });
+                if ((data.role === 'worker' || data.role === 'both') && data.location) {
+                    const workerLoc = data.location.toLowerCase().trim();
+                    const userLoc = cleanLocation.toLowerCase();
+                    if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
+                        workers.push({ id: data.uid, ...data });
+                    }
                 }
             });
             renderWorkers();
