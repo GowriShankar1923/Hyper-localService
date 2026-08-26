@@ -1533,7 +1533,7 @@ const logoutBtn = document.getElementById('logout-btn');
                 const threeDotsMenu = actionHtml ? `
                     <div class="booking-menu" style="position: absolute; right: 15px; top: 15px; display: inline-block;">
                         <i class="fa-solid fa-ellipsis-vertical toggle-menu" style="cursor: pointer; padding: 5px; color: #888; font-size: 18px;"></i>
-                        <div class="menu-dropdown hidden" style="position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; width: 220px; padding: 5px 0; display: none;">
+                        <div class="menu-dropdown" style="position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; width: 220px; padding: 5px 0; display: none;">
                             ${actionHtml}
                         </div>
                     </div>
@@ -1835,8 +1835,8 @@ const logoutBtn = document.getElementById('logout-btn');
                 if (isWorker) {
                     if (booking.status === 'Pending') {
                         actionsHtml += `
-                            <div class="dropdown-item accept-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: green; border-bottom: 1px solid #eee;"><i class="fa-solid fa-check"></i> Accept Request</div>
-                            <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;"><i class="fa-solid fa-times"></i> Cancel Request</div>
+                            <div class="dropdown-item accept-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: green; border-bottom: 1px solid #eee;"> Accept Work</div>
+                            <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;"> Cancel Work</div>
                         `;
                     } else if (booking.status === 'Accepted') {
                         actionsHtml += `
@@ -1884,7 +1884,7 @@ const logoutBtn = document.getElementById('logout-btn');
                 const threeDotsMenu = actionsHtml ? `
                     <div class="booking-menu" style="position: relative; display: inline-block; margin-left: 10px;">
                         <i class="fa-solid fa-ellipsis-vertical toggle-menu" style="cursor: pointer; padding: 5px; color: #888;"></i>
-                        <div class="menu-dropdown hidden" style="position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; width: 200px; padding: 5px 0; display: none;">
+                        <div class="menu-dropdown" style="position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; width: 200px; padding: 5px 0; display: none;">
                             ${actionsHtml}
                         </div>
                     </div>
