@@ -1436,7 +1436,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex-direction: column;
     gap: 10px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .booking-header {
