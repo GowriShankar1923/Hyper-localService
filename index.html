@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperlocal Services - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <link rel="manifest" href="/manifest.json">
+</head>
+
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="logo-container">
+            <img src="logo.png" alt="Hyperlocal Services Logo" class="splash-logo"
+                onerror="this.src='https://via.placeholder.com/250x100.png?text=Logo+Here'; this.onerror=null;">
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="login-page hidden">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="logo.png" alt="Hyperlocal Services Logo" class="login-logo"
+                    onerror="this.src='https://via.placeholder.com/180x70.png?text=Logo+Here'; this.onerror=null;">
+                <h2>Welcome Back</h2>
+                <p>Sign in to continue to Hyperlocal Services</p>
+            </div>
+
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                        <i class="fa-solid fa-eye-slash toggle-password" id="toggle-password"></i>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="#" id="forgot-password-link" class="forgot-password">Forgot Password?</a>
+                </div>
+
+                <button type="submit" id="main-login-btn" class="login-btn">Log In</button>
+            </form>
+
+            <div class="registration-links">
+                <p>New to Hyperlocal Services?</p>
+                <div class="register-buttons">
+                    <a href="#" id="btn-register-customer" class="register-btn customer-btn">Register as Customer</a>
+                    <a href="#" id="btn-register-worker" class="register-btn worker-btn">Register as Worker</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Registration Page -->
+    <div id="customer-register-page" class="login-page hidden" style="display: none;">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="logo.png" alt="Hyperlocal Services Logo" class="login-logo"
+                    onerror="this.src='https://via.placeholder.com/180x70.png?text=Logo+Here'; this.onerror=null;">
+                <h2>Customer Registration</h2>
+                <p>Create an account to get started</p>
+            </div>
+
+            <form id="customer-register-form" class="login-form">
+                <div class="input-group">
+                    <label for="reg-name">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="reg-name" placeholder="Enter your name" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="reg-email" placeholder="Enter your email" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-phone">Phone Number</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone input-icon"></i>
+                        <input type="tel" id="reg-phone" placeholder="10-digit mobile number" pattern="[0-9]{10}"
+                            title="Please enter exactly 10 digits" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-location">Location</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-location-dot input-icon"></i>
+                        <input type="text" id="reg-location" placeholder="Enter your city/area" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="reg-password" placeholder="Minimum 6 characters" minlength="6"
+                            required>
+                        <i class="fa-solid fa-eye-slash toggle-password" id="toggle-reg-password"></i>
+                    </div>
+                </div>
+
+                <div class="input-group otp-group" id="customer-otp-group" style="display: none; margin-bottom: 15px;">
+                    <label for="customer-otp-input">Enter OTP</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-key input-icon"></i>
+                        <input type="text" id="customer-otp-input" placeholder="6-digit OTP" maxlength="6">
+                    </div>
+                </div>
+                <button type="submit" class="login-btn">Register</button>
+            </form>
+
+            <div class="registration-links">
+                <p>Already have an account?</p>
+                <a href="#" id="back-to-login" class="forgot-password" style="font-size: 16px;">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worker Registration Page -->
+    <div id="worker-register-page" class="login-page hidden" style="display: none;">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="logo.png" alt="Hyperlocal Services Logo" class="login-logo"
+                    onerror="this.src='https://via.placeholder.com/180x70.png?text=Logo+Here'; this.onerror=null;">
+                <h2>Worker Registration</h2>
+                <p>Join as a Service Provider</p>
+            </div>
+
+            <form id="worker-register-form" class="login-form">
+                <div class="input-group">
+                    <label for="worker-reg-name">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="worker-reg-name" placeholder="Enter your name" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="worker-reg-email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="worker-reg-email" placeholder="Enter your email" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="worker-reg-phone">Phone Number</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone input-icon"></i>
+                        <input type="tel" id="worker-reg-phone" placeholder="10-digit mobile number" pattern="[0-9]{10}"
+                            title="Please enter exactly 10 digits" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="worker-reg-location">Location</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-location-dot input-icon"></i>
+                        <input type="text" id="worker-reg-location" placeholder="Enter your city/area" required>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="worker-reg-service">Service Specialization</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-wrench input-icon"></i>
+                        <select id="worker-reg-service" required style="width: 100%; padding: 14px 15px 14px 45px; border: 1.5px solid var(--border-color); border-radius: 10px; background-color: var(--input-bg); font-size: 15px; outline: none; appearance: none;">
+                            <option value="" disabled selected>Select your trade</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="worker-reg-password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="worker-reg-password" placeholder="Minimum 6 characters" minlength="6"
+                            required>
+                        <i class="fa-solid fa-eye-slash toggle-password" id="toggle-worker-reg-password"></i>
+                    </div>
+                </div>
+
+                <div class="input-group otp-group" id="worker-otp-group" style="display: none; margin-bottom: 15px;">
+                    <label for="worker-otp-input">Enter OTP</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-key input-icon"></i>
+                        <input type="text" id="worker-otp-input" placeholder="6-digit OTP" maxlength="6">
+                    </div>
+                </div>
+                <button type="submit" class="login-btn">Register as Worker</button>
+            </form>
+
+            <div class="registration-links">
+                <p>Already have an account?</p>
+                <a href="#" id="back-to-login-worker" class="forgot-password" style="font-size: 16px;">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Page -->
+    <div id="forgot-password-page" class="login-page hidden" style="display: none;">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="logo.png" alt="Hyperlocal Services Logo" class="login-logo"
+                    onerror="this.src='https://via.placeholder.com/180x70.png?text=Logo+Here'; this.onerror=null;">
+                <h2>Reset Password</h2>
+                <p>Enter your email to receive a password reset link</p>
+            </div>
+
+            <form id="forgot-password-form" class="login-form">
+                <div class="input-group">
+                    <label for="forgot-email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="forgot-email" placeholder="Enter your registered email" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn">Send Reset Link</button>
+            </form>
+
+            <div class="registration-links">
+                <p>Remember your password?</p>
+                <a href="#" id="back-to-login-forgot" class="forgot-password" style="font-size: 16px;">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Layout (Post-Login) -->
+    <div id="main-app" class="main-app hidden" style="display: none;">
+        
+        <!-- Tab Content Areas -->
+        <div class="app-content-container">
+            <!-- Home View -->
+            <div id="view-home" class="app-view active">
+                <div class="home-top-section">
+                    <div class="home-brand">
+                        <div class="home-logo-circle">
+                            <img src="logo.png" alt="Logo" onerror="this.src='https://via.placeholder.com/40x40.png?text=Logo'; this.onerror=null;">
+                        </div>
+                        <h2>Hyperlocal Services</h2>
+                    </div>
+                    
+                    <div class="home-delivery-row">
+                        <div class="home-delivery-info">
+                            <span class="deliver-to-text">Deliver to</span>
+                            <div class="delivery-location">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                                <span id="home-location-display">Loading...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="header-menu-container" style="position: relative;">
+                            <i class="fa-solid fa-ellipsis-vertical menu-dots-icon" id="home-menu-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444;"></i>
+                            <div id="home-dropdown-menu" class="hidden" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 140px; z-index: 1000;">
+                                    <button id="home-logout-btn" style="width: 100%; padding: 10px; background: none; border: none; text-align: left; cursor: pointer; font-size: 14px; color: #d32f2f;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+                                </div>
+                        </div>
+                    </div>
+                    
+                    <div class="home-search-bar">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" placeholder="Search for a service">
+                    </div>
+                </div>
+                <div class="home-content">
+                    
+                    <div id="customer-services-container">
+
+                        <!-- Static Service Categories Grid (always visible) -->
+                        <div class="services-section">
+                            <div class="section-header">
+                                <h3>Our Services</h3>
+                            </div>
+                            <div class="service-categories-grid" id="service-categories-grid">
+                                <!-- JS will populate -->
+                            </div>
+                        </div>
+
+                        <!-- Workers for selected service (appears after tapping a category) -->
+                        <div id="service-workers-section" style="display:none; margin-top: 10px;">
+                            <div class="section-header" style="margin-bottom: 12px;">
+                                <h3 id="service-workers-title">Available Workers</h3>
+                                <span id="btn-back-to-services" style="color: var(--primary-blue); font-size: 14px; font-weight: 600; cursor: pointer;">← Back</span>
+                            </div>
+                            <div class="services-grid" id="dynamic-workers-grid">
+                                <!-- injected by JS -->
+                            </div>
+                        </div> <!-- End service-workers-section -->
+                    </div> <!-- End customer-services-container -->
+                    
+                    <!-- Worker Dashboard Container -->
+                    <div id="worker-dashboard-container" style="display: none; padding: 20px; background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 20px;">
+                        <h3 style="margin-bottom: 15px; font-size: 18px;">Worker Dashboard</h3>
+                        
+                        <!-- Visual Calendar Section -->
+                        <div class="visual-calendar" style="background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #eee;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="margin: 0; color: var(--primary-blue); font-size: 16px;"><i class="fa-regular fa-calendar"></i> <span id="calendar-month-year"></span></h4>
+                                <div class="calendar-nav" style="display: flex; gap: 10px;">
+                                    <i class="fa-solid fa-chevron-left" id="prev-month-btn" style="cursor: pointer; padding: 5px; background: #f0f4f8; border-radius: 4px; color: var(--primary-blue);"></i>
+                                    <i class="fa-solid fa-chevron-right" id="next-month-btn" style="cursor: pointer; padding: 5px; background: #f0f4f8; border-radius: 4px; color: var(--primary-blue);"></i>
+                                </div>
+                            </div>
+                            <!-- Day Headers -->
+                            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; font-size: 12px; color: #888; margin-bottom: 10px;">
+                                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                            </div>
+                            <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center;">
+                                <!-- JS will populate -->
+                            </div>
+                        </div>
+
+                        <!-- Leave Management Section -->
+                        <div class="leave-management-container" id="leave-management-container">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="margin: 0; color: var(--primary-blue); font-size: 16px;"><i class="fa-regular fa-calendar-xmark"></i> Leave Management</h4>
+                                <div class="worker-menu" style="position: relative;">
+                                    <i class="fa-solid fa-ellipsis-vertical" id="worker-dashboard-menu-dots" style="cursor: pointer; color: #888; padding: 5px; font-size: 18px;"></i>
+                                    <div id="worker-dashboard-dropdown" class="hidden" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 160px; z-index: 1000;">
+                                        <button id="cancel-leave-btn" style="width: 100%; padding: 10px; background: none; border: none; text-align: left; cursor: pointer; font-size: 14px; color: #d32f2f; border-bottom: 1px solid #eee;"><i class="fa-solid fa-ban"></i> Cancel Leave</button>
+                                        <button id="worker-leave-history-btn" style="width: 100%; padding: 10px; background: none; border: none; text-align: left; cursor: pointer; font-size: 14px; color: #333;"><i class="fa-solid fa-clock-rotate-left"></i> Leave History</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Active Leave Status (Hidden by default) -->
+                            <div id="active-leave-status" style="display: none; background: #ffebee; border-left: 4px solid #f44336; padding: 12px; border-radius: 8px; margin-bottom: 15px; position: relative;">
+                                <p style="color: #d32f2f; font-weight: 600; font-size: 14px; margin-bottom: 5px;">Currently on Leave</p>
+                                <p id="active-leave-details" style="font-size: 13px; color: #555; margin-bottom: 0;"></p>
+                            </div>
+
+                            <!-- Take Leave Form -->
+                            <div id="take-leave-form" style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee;">
+                                <div style="display: flex; gap: 10px;">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>Start Date</label>
+                                        <input type="date" id="leave-date" class="form-control" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>End Date (Optional)</label>
+                                        <input type="date" id="leave-end-date" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-top: 10px;">
+                                    <label>Leave Type</label>
+                                    <select id="leave-type" class="form-control">
+                                        <option value="Full Day">Full Day</option>
+                                        <option value="Half Day">Half Day</option>
+                                    </select>
+                                </div>
+                                <div id="half-day-timing-group" class="form-group" style="display: none; margin-top: 10px;">
+                                    <label>Timing (e.g. 10AM - 2PM)</label>
+                                    <input type="text" id="leave-timing" class="form-control" placeholder="E.g., Morning Shift (10AM - 2PM)">
+                                </div>
+                                <div class="form-group" style="margin-top: 10px;">
+                                    <label>Reason</label>
+                                    <input type="text" id="leave-reason" class="form-control" placeholder="E.g., Personal work, Sick leave..." required>
+                                </div>
+                                <button id="submit-leave-btn" class="primary-btn" style="margin-top: 15px; background-color: #f44336;"><i class="fa-solid fa-calendar-minus"></i> Submit Leave</button>
+                            </div>
+                        </div>
+                        <div id="worker-jobs-list" class="bookings-list">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div> <!-- End worker-dashboard-container -->
+                </div> <!-- End home-content -->
+            </div> <!-- End view-home -->
+            <!-- Bookings View -->
+            <div id="view-bookings" class="app-view">
+                <div class="profile-header">
+                    <i class="fa-solid fa-arrow-left profile-back-btn"></i>
+                    <h2>My Bookings</h2>
+                </div>
+                <div class="profile-content">
+                    <div id="my-bookings-list" class="bookings-list">
+                        <p class="empty-state">Loading bookings...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="view-history" class="app-view">
+                <div class="profile-header">
+                    <i class="fa-solid fa-arrow-left profile-back-btn"></i>
+                    <h2>History</h2>
+                </div>
+                <div class="profile-content">
+                    <div id="my-history-list" class="bookings-list">
+                        <p class="empty-state">No past history.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications View -->
+            <div id="view-notifications" class="app-view">
+                <div class="profile-header">
+                    <i class="fa-solid fa-arrow-left profile-back-btn"></i>
+                    <h2>Notifications</h2>
+                </div>
+                <div class="profile-content">
+                    <div id="my-notifications-list" class="bookings-list">
+                        <p class="empty-state">No new notifications.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Profile View -->
+            <div id="view-profile" class="app-view profile-view">
+
+                <!-- Blue Header -->
+                <div class="profile-header">
+                    <i class="fa-solid fa-arrow-left profile-back-btn" id="profile-back-btn"></i>
+                    <h2>My Profile</h2>
+                </div>
+
+                <div class="profile-content">
+
+                    <!-- Profile Card -->
+                    <div class="profile-card">
+                        <div class="profile-avatar-wrapper">
+                            <img id="profile-avatar-img" src="https://via.placeholder.com/150?text=User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: none;">
+                            <i class="fa-solid fa-user profile-avatar-icon" id="profile-avatar-icon-default"></i>
+                            <div class="avatar-edit-badge" id="avatar-edit-btn">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                        </div>
+                        <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
+                        
+                        <!-- Avatar Action Modal -->
+                        <div id="avatar-action-modal" class="modal-overlay hidden" style="display: none; z-index: 2000;">
+                            <div class="modal-content" style="max-width: 300px; padding: 20px; text-align: center; position: relative;">
+                                <i class="fa-solid fa-xmark" id="btn-avatar-close" style="position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; color: var(--text-secondary);"></i>
+                                <h3 style="margin-top: 0; margin-bottom: 20px;">Profile Photo</h3>
+                                <button id="btn-avatar-update" class="login-btn" style="background-color: var(--primary-blue); margin-bottom: 10px;">Gallery</button>
+                                <button id="btn-avatar-camera" class="login-btn" style="background-color: var(--primary-blue); margin-bottom: 10px;">Camera</button>
+                                <button id="btn-avatar-remove" class="login-btn" style="background-color: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; margin-bottom: 10px;">Remove Photo</button>
+                                <input type="file" id="profile-camera-input" accept="image/*" capture="environment" style="display: none;">
+                            </div>
+                        </div>
+
+                        <h3 id="profile-name-display" class="profile-name">—</h3>
+                        <p id="profile-email-display" class="profile-email">—</p>
+                        <div class="profile-location">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span id="profile-location-display">—</span>
+                            <i class="fa-solid fa-pencil edit-location-btn"></i>
+                        </div>
+                        <div id="profile-role-display" class="profile-role-badge">—</div>
+
+                        <!-- Extra info rows: phone & service -->
+                        <div class="profile-info-list" style="margin-top: 16px;">
+                            <div class="profile-info-row">
+                                <i class="fa-solid fa-phone"></i>
+                                <span id="profile-phone-display">—</span>
+                            </div>
+                            <div class="profile-info-row" id="profile-service-row" style="display:none;">
+                                <i class="fa-solid fa-wrench"></i>
+                                <span id="profile-service-display">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings List -->
+                    <div class="settings-list">
+
+                        <!-- Dark Mode -->
+                        <div class="settings-item">
+                            <div class="settings-item-left">
+                                <i class="fa-solid fa-moon settings-icon purple-icon"></i>
+                                <span>Dark Mode</span>
+                            </div>
+                            <div class="settings-item-right">
+                                <label class="switch">
+                                    <input type="checkbox" id="dark-mode-toggle">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Notification -->
+                        <div class="settings-item clickable">
+                            <div class="settings-item-left">
+                                <i class="fa-solid fa-bell settings-icon green-icon"></i>
+                                <span>Notification</span>
+                            </div>
+                            <div class="settings-item-right">
+                                <i class="fa-solid fa-caret-right chevron-icon"></i>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Logout -->
+                    <button id="logout-btn" class="profile-logout-btn">
+                        <i class="fa-solid fa-power-off"></i> Logout
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+                        <!-- ADMIN VIEWS -->
+        <div id="view-admin-home" class="app-view profile-view">
+            <!-- Blue Header -->
+            <div class="profile-header">
+                <h2>Admin Dashboard</h2>
+            </div>
+            <div class="profile-content">
+                <div class="home-delivery-row" style="margin-bottom: 20px;">
+                    <div class="home-delivery-info">
+                        <span class="deliver-to-text">Location</span>
+                        <div class="delivery-location">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                            <span id="admin-home-location-display">Central Hub</span>
+                        </div>
+                    </div>
+                    
+                    <div class="header-menu-container" style="position: relative;">
+                        <i class="fa-solid fa-ellipsis-vertical menu-dots-icon" id="admin-home-menu-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444;"></i>
+                        <div id="admin-home-dropdown-menu" class="dropdown-menu hidden" style="display: none; position: absolute; right: 0; top: 100%; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 170px; z-index: 10;">
+                            <button id="admin-home-logout-btn" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; font-size: 14px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-power-off" style="color: #ef3934;"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-dashboard-grid" style="margin-bottom: 20px;">
+                    <div class="admin-stat-card">
+                        <i class="fa-solid fa-users"></i>
+                        <div class="stat-info">
+                            <h3 style="font-size: 12px;">Customers</h3>
+                            <p id="admin-total-customers">0</p>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <i class="fa-solid fa-hard-hat"></i>
+                        <div class="stat-info">
+                            <h3 style="font-size: 12px;">Workers</h3>
+                            <p id="admin-total-workers">0</p>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                        <div class="stat-info">
+                            <h3 style="font-size: 12px;">Orders</h3>
+                            <p id="admin-total-bookings">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="services-section">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>Active Services</h3>
+                        <button id="admin-add-service-btn" style="background: var(--primary-blue); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-plus"></i> Add</button>
+                    </div>
+                    <div class="service-categories-grid" id="admin-service-categories-grid">
+                        <!-- JS will populate -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Add Service Modal -->
+            <div id="add-service-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 18px; color: var(--primary-blue);">Add New Service</h3>
+                    <div class="input-group">
+                        <label style="font-size: 13px; color: #555;">Service Name</label>
+                        <input type="text" id="add-svc-name" placeholder="e.g. Plumbing" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px;" required>
+                    </div>
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label style="font-size: 13px; color: #555;">Emoji Icon</label>
+                        <input type="text" id="add-svc-icon" placeholder="e.g. 🔧" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px;" required>
+                    </div>
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label style="font-size: 13px; color: #555;">Image Background URL/Name</label>
+                        <input type="text" id="add-svc-img" placeholder="e.g. service_plumber.jpg" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px;" required>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                        <button id="add-svc-cancel" style="padding: 8px 15px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer; color: #555;">Cancel</button>
+                        <button id="add-svc-save" style="padding: 8px 15px; border: none; background: var(--primary-blue); color: white; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Service</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-admin-orders" class="app-view profile-view">
+            <div class="profile-header">
+                <h2>All Orders</h2>
+            </div>
+            <div class="profile-content" style="padding-top: 10px;">
+                <div class="home-search-bar" style="margin-bottom: 20px;">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="admin-search-orders" placeholder="Search orders...">
+                </div>
+                <div class="admin-list-container" id="admin-orders-list" style="padding: 0;">
+                    <div style="padding:20px; text-align:center;">Loading orders...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-admin-customers" class="app-view profile-view">
+            <div class="profile-header">
+                <h2>All Customers</h2>
+            </div>
+            <div class="profile-content" style="padding-top: 10px;">
+                <div class="home-search-bar" style="margin-bottom: 20px;">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="admin-search-customers" placeholder="Search customers...">
+                </div>
+                <div class="admin-list-container" id="admin-customers-list" style="padding: 0;">
+                    <div style="padding:20px; text-align:center;">Loading customers...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-admin-workers" class="app-view profile-view">
+            <div class="profile-header">
+                <h2>All Workers</h2>
+            </div>
+            <div class="profile-content" style="padding-top: 10px;">
+                <div class="home-search-bar" style="margin-bottom: 20px;">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="admin-search-workers" placeholder="Search workers...">
+                </div>
+                <div class="admin-list-container" id="admin-workers-list" style="padding: 0;">
+                    <div style="padding:20px; text-align:center;">Loading workers...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav" id="normal-bottom-nav" style="display: none;">
+            <div class="nav-item active" data-target="view-home">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" data-target="view-bookings">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>My Bookings</span>
+            </div>
+            <div class="nav-item" data-target="view-history">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>History</span>
+            </div>
+            <div class="nav-item" data-target="view-notifications">
+                <i class="fa-solid fa-bell"></i>
+                <span>Notification</span>
+            </div>
+            <div class="nav-item" data-target="view-profile">
+                <i class="fa-solid fa-user"></i>
+                <span>My Profile</span>
+            </div>
+        </nav>
+
+    <!-- Admin Bottom Navigation Bar -->
+    <nav class="bottom-nav admin-bottom-nav hidden" id="admin-bottom-nav" style="display: none;">
+        <div class="nav-item active" data-target="view-admin-home">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" data-target="view-admin-orders">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Order</span>
+        </div>
+        <div class="nav-item" data-target="view-admin-customers">
+            <i class="fa-solid fa-users"></i>
+            <span>Customer</span>
+        </div>
+        <div class="nav-item" data-target="view-admin-workers">
+            <i class="fa-solid fa-user-tie"></i>
+            <span>Worker</span>
+        </div>
+        <div class="nav-item" data-target="view-profile">
+            <i class="fa-solid fa-user"></i>
+            <span>My Profile</span>
+        </div>
+    </nav>
+
+    </div>
+
+    <!-- Image Cropper Modal -->
+    <div id="cropper-modal" class="modal-overlay hidden" style="display: none; z-index: 3000;">
+        <div class="modal-content" style="max-width: 90vw; width: 400px; padding: 20px;">
+            <h3>Crop Image</h3>
+            <div style="width: 100%; max-height: 400px; margin: 15px 0; overflow: hidden; background: #eee;">
+                <img id="cropper-image" style="max-width: 100%; display: block;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="btn-cancel-crop" class="login-btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 15px;">Cancel</button>
+                <button type="button" id="btn-save-crop" class="login-btn" style="background-color: var(--primary-blue); color: white; padding: 8px 15px;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Cropper Modal -->
+    <div id="booking-cropper-modal" class="modal-overlay hidden" style="display: none; z-index: 3000;">
+        <div class="modal-content" style="max-width: 90vw; width: 400px; padding: 20px;">
+            <h3>Crop Photo</h3>
+            <div style="width: 100%; max-height: 400px; margin: 15px 0; overflow: hidden; background: #eee;">
+                <img id="booking-cropper-image" style="max-width: 100%; display: block;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="btn-cancel-booking-crop" class="login-btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 15px;">Cancel</button>
+                <button type="button" id="btn-save-booking-crop" class="login-btn" style="background-color: var(--primary-blue); color: white; padding: 8px 15px;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Picker Modal -->
+    <div id="location-picker-modal" class="location-picker hidden">
+        <div class="lp-header">
+            <i class="fa-solid fa-angle-left lp-back-btn" id="close-location-picker"></i>
+            <h3 id="lp-current-city">Select City</h3>
+        </div>
+
+        <div class="lp-search-container">
+            <div class="lp-search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="lp-search-input" placeholder="Search for your city">
+            </div>
+            
+            <button class="lp-auto-detect" id="lp-auto-detect-btn">
+                <i class="fa-solid fa-crosshairs"></i>
+                Auto Detect My Location
+            </button>
+        </div>
+
+        <div class="lp-content-area">
+            <!-- Popular Cities Section -->
+            <div id="lp-popular-section">
+                <h4 class="lp-section-title">POPULAR CITIES</h4>
+                <div class="lp-popular-grid">
+                    <div class="lp-popular-item" data-city="Mumbai"><i class="fa-solid fa-city"></i><span>Mumbai</span></div>
+                    <div class="lp-popular-item" data-city="Delhi-NCR"><i class="fa-solid fa-monument"></i><span>Delhi-NCR</span></div>
+                    <div class="lp-popular-item" data-city="Bengaluru"><i class="fa-solid fa-building"></i><span>Bengaluru</span></div>
+                    <div class="lp-popular-item" data-city="Hyderabad"><i class="fa-solid fa-archway"></i><span>Hyderabad</span></div>
+                    <div class="lp-popular-item" data-city="Chandigarh"><i class="fa-solid fa-tree-city"></i><span>Chandigarh</span></div>
+                    <div class="lp-popular-item" data-city="Ahmedabad"><i class="fa-solid fa-vihara"></i><span>Ahmedabad</span></div>
+                    <div class="lp-popular-item" data-city="Pune"><i class="fa-solid fa-building-columns"></i><span>Pune</span></div>
+                    <div class="lp-popular-item" data-city="Chennai"><i class="fa-solid fa-gopuram"></i><span>Chennai</span></div>
+                    <div class="lp-popular-item" data-city="Kolkata"><i class="fa-solid fa-bridge"></i><span>Kolkata</span></div>
+                    <div class="lp-popular-item" data-city="Kochi"><i class="fa-solid fa-ship"></i><span>Kochi</span></div>
+                </div>
+            </div>
+
+            <!-- Other Cities Section -->
+            <div id="lp-other-section">
+                <h4 class="lp-section-title">OTHER CITIES</h4>
+                <div class="lp-other-list" id="lp-other-list">
+                    <!-- Cities will be injected here via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Booking Modal -->
+    <div id="service-booking-modal" class="location-picker hidden">
+        <div class="lp-header">
+            <i class="fa-solid fa-angle-left lp-back-btn" id="close-booking-modal"></i>
+            <h3 id="booking-modal-title">Book Service</h3>
+        </div>
+
+        <div class="lp-content-area" style="padding: 20px;">
+            <form id="booking-form" novalidate class="auth-form" style="margin-top: 0;">
+                
+                <div class="input-group">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <input type="date" id="book-date" required style="padding-left: 45px;">
+                </div>
+                
+                <!-- Detailed Address Form -->
+                <div class="detailed-address-form">
+                    <div class="form-group">
+                        <label>Flat, House no., Building, Company, Apartment</label>
+                        <input type="text" id="book-flat" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Area, Street, Sector, Village</label>
+                        <input type="text" id="book-area" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Landmark</label>
+                        <input type="text" id="book-landmark" placeholder="E.g. near apollo hospital">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half-width">
+                            <label>Pincode</label>
+                            <input type="text" id="book-pincode" placeholder="6-digit Pincode" required pattern="[0-9]{6}">
+                        </div>
+                        <div class="form-group half-width">
+                            <label>Town/City</label>
+                            <input type="text" id="book-city" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>State</label>
+                        <select id="book-state" required>
+                            <option value="" disabled selected>Select state</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                            <option value="Ladakh">Ladakh</option>
+                            <option value="Puducherry">Puducherry</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group" style="align-items: flex-start;">
+                    <i class="fa-solid fa-circle-info" style="margin-top: 15px;"></i>
+                    <textarea id="book-problem" placeholder="Describe the problem..." required style="width: 100%; border: none; outline: none; padding: 15px 15px 15px 45px; border-radius: 8px; font-family: inherit; font-size: 15px; resize: vertical; min-height: 100px; background-color: var(--input-bg);"></textarea>
+                </div>
+
+                <div class="image-upload-container">
+                    <p class="upload-label">Attach Photo (Optional)</p>
+                    <div class="upload-box" id="upload-box" onclick="if(window.openBookingActionModal) { window.openBookingActionModal(); } else { alert('Please Hard Refresh (Ctrl + F5). The new code has not loaded yet.'); }">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>Take Photo or Choose Gallery</span>
+                    </div>
+                    <input type="file" id="book-image" accept="image/*" style="display: none;">
+                    <div id="image-preview-container" class="hidden" onclick="if(event.target.id !== 'remove-image-btn') { if(window.openBookingActionModal) { window.openBookingActionModal(); } else { alert('Please Hard Refresh (Ctrl + F5). The new code has not loaded yet.'); } }">
+                        <img id="image-preview" src="" alt="Preview">
+                        <i class="fa-solid fa-circle-xmark" id="remove-image-btn"></i>
+                    </div>
+                </div>
+
+                <div id="booking-error" style="color: red; font-size: 14px; font-weight: bold; margin-top: 10px; display: none; text-align: center;">Please fill out all required fields marked in red.</div>
+                <button type="submit" class="login-btn" style="margin-top: 20px;" id="order-now-btn">Order Now</button>
+            </form>
+        </div>
+    </div>
+    <!-- Worker Action Modal: Enter Amount -->
+    <div id="amount-modal" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">Enter Bill Amount</h3>
+                <i class="fa-solid fa-xmark" id="close-amount-modal" style="font-size: 20px; cursor: pointer; color: var(--text-secondary);"></i>
+            </div>
+            <form id="amount-form">
+                <div class="input-group">
+                    <label>Cash on Delivery Amount (₹)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-indian-rupee-sign input-icon"></i>
+                        <input type="number" id="bill-amount" placeholder="e.g. 500" required>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn">Generate Customer OTP</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Worker Action Modal: Enter OTP -->
+    <div id="otp-verify-modal" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">Verify Customer OTP</h3>
+                <i class="fa-solid fa-xmark" id="close-otp-verify-modal" style="font-size: 20px; cursor: pointer; color: var(--text-secondary);"></i>
+            </div>
+            <form id="otp-verify-form">
+                <p style="font-size: 14px; margin-bottom: 15px;">Ask the customer for the 6-digit OTP shown on their screen.</p>
+                <div class="input-group">
+                    <label>Customer OTP</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-key input-icon"></i>
+                        <input type="text" id="verify-customer-otp" placeholder="6-digit code" maxlength="6" required>
+                    </div>
+                </div>
+                <div id="otp-verify-error" style="color: red; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold;"></div>
+                <button type="submit" class="login-btn">Complete & Receive Payment</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Role Selection Modal — must be BEFORE the script tag -->
+    <div id="role-selection-modal" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content">
+            <i class="fa-solid fa-circle-user" style="font-size: 48px; color: var(--primary-blue); margin-bottom: 16px;"></i>
+            <h3>Welcome Back!</h3>
+            <p>You are registered as both a <strong>Customer</strong> and a <strong>Worker</strong>. Which dashboard would you like to open?</p>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <button id="btn-login-customer" class="role-card-btn customer-btn">
+                    <div class="role-icon"><i class="fa-solid fa-user"></i></div>
+                    <div class="role-label">
+                        Customer Dashboard
+                        <span>Book services & track orders</span>
+                    </div>
+                </button>
+                <button id="btn-login-worker" class="role-card-btn worker-btn">
+                    <div class="role-icon"><i class="fa-solid fa-briefcase"></i></div>
+                    <div class="role-label">
+                        Worker Dashboard
+                        <span>Manage jobs & earn money</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave History Modal -->
+    <div id="leave-history-modal" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--primary-blue);"><i class="fa-solid fa-clock-rotate-left"></i> Leave History</h3>
+                <i class="fa-solid fa-xmark" id="close-leave-history-modal" style="font-size: 20px; cursor: pointer; color: var(--text-secondary);"></i>
+            </div>
+            <div id="leave-history-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="text-align:center; color: #666;">Loading history...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto; text-align: center;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--primary-blue);">Transaction Receipt</h3>
+                <i class="fa-solid fa-xmark" id="close-receipt-modal" style="font-size: 20px; cursor: pointer; color: var(--text-secondary);"></i>
+            </div>
+            <div style="font-size: 48px; color: var(--accent-green); margin-bottom: 10px;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 style="margin: 0 0 10px 0;">Payment Successful</h2>
+            <p style="color: #666; margin-bottom: 20px;">Thank you for using Hyperlocal Services!</p>
+            
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; text-align: left; margin-bottom: 20px; border: 1px dashed #ccc;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: #666;">Service</span>
+                    <strong id="receipt-service">...</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: #666;">Date</span>
+                    <strong id="receipt-date">...</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: #666;">Status</span>
+                    <strong id="receipt-status">...</strong>
+                </div>
+                <div style="border-top: 1px dashed #ccc; margin: 15px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 18px;">
+                    <span style="color: #333; font-weight: bold;">Amount Paid</span>
+                    <strong id="receipt-amount" style="color: var(--accent-green);">...</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- WebRTC Camera Modal -->
+    <div id="webrtc-camera-modal" class="modal-overlay hidden" style="display: none; z-index: 2500;">
+        <div class="modal-content" style="max-width: 90vw; width: 400px; padding: 20px; text-align: center;">
+            <h3 style="margin-top: 0; margin-bottom: 15px;">Take Photo</h3>
+            <div style="width: 100%; max-height: 400px; margin-bottom: 15px; background: #000; border-radius: 8px; overflow: hidden;">
+                <video id="webrtc-video" autoplay playsinline style="width: 100%; height: auto; display: block;"></video>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: space-between;">
+                <button id="btn-webrtc-cancel" class="login-btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); width: 48%;">Cancel</button>
+                <button id="btn-webrtc-capture" class="login-btn" style="background-color: var(--primary-blue); width: 48%;"><i class="fa-solid fa-camera"></i> Capture</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Photo Action Modal -->
+    <div id="booking-action-modal" class="modal-overlay hidden" style="display: none; z-index: 2500;">
+        <div class="modal-content" style="max-width: 300px; padding: 20px; text-align: center; position: relative;">
+            <i class="fa-solid fa-xmark" id="btn-booking-action-close" style="position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; color: var(--text-secondary);"></i>
+            <h3 style="margin-top: 0; margin-bottom: 20px;">Attach Photo</h3>
+            <button type="button" id="btn-booking-gallery" class="login-btn" style="background-color: var(--primary-blue); margin-bottom: 10px;">Gallery</button>
+            <button type="button" id="btn-booking-camera" class="login-btn" style="background-color: var(--primary-blue); margin-bottom: 10px;">Camera</button>
+            <button type="button" id="btn-booking-remove" class="login-btn hidden" style="background-color: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; margin-bottom: 10px; display: none;">Remove Photo</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module" src="script.js?v=13"></script>
+
+
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
+</body>
+
+</html>

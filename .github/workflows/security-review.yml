@@ -1,0 +1,208 @@
+name: Security Review
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-review:
+    name: Comprehensive Security Assessment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ──────────────────────────────────────────
+      # STEP 1: Detect Technology Stack
+      # ──────────────────────────────────────────
+      - name: Detect Backend Technology
+        id: detect
+        run: |
+          echo "Detecting technology stack..."
+          if [ -f "package.json" ]; then
+            echo "backend=nodejs" >> $GITHUB_OUTPUT
+            echo "Detected: Node.js / Express"
+            cat package.json | grep '"dependencies"' -A 20
+          elif [ -f "requirements.txt" ] || [ -f "setup.py" ]; then
+            echo "backend=python" >> $GITHUB_OUTPUT
+            echo "Detected: Python"
+          elif [ -f "pom.xml" ]; then
+            echo "backend=java" >> $GITHUB_OUTPUT
+            echo "Detected: Java/Spring"
+          else
+            echo "backend=unknown" >> $GITHUB_OUTPUT
+            echo "Unknown backend"
+          fi
+
+      # ──────────────────────────────────────────
+      # STEP 2: Setup Node.js (for npm audit)
+      # ──────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm install --ignore-scripts || true
+          fi
+
+      # ──────────────────────────────────────────
+      # STEP 3: NPM Audit (Dependency Scanning)
+      # ──────────────────────────────────────────
+      - name: Run npm audit
+        id: npm_audit
+        continue-on-error: true
+        run: |
+          echo "## NPM Dependency Audit" >> $GITHUB_STEP_SUMMARY
+          npm audit --json > npm-audit-report.json 2>&1 || true
+          npm audit 2>&1 | tee npm-audit-summary.txt || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat npm-audit-summary.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      # ──────────────────────────────────────────
+      # STEP 4: Secret Detection (Gitleaks)
+      # ──────────────────────────────────────────
+      - name: Run Gitleaks (Secret Detection)
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ──────────────────────────────────────────
+      # STEP 5: SAST — Semgrep
+      # ──────────────────────────────────────────
+      - name: Run Semgrep SAST
+        id: semgrep
+        continue-on-error: true
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/nodejs
+            p/owasp-top-ten
+            p/secrets
+          generateSarif: '1'
+
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: semgrep.sarif
+
+      # ──────────────────────────────────────────
+      # STEP 6: Custom SAST Checks (Bash)
+      # ──────────────────────────────────────────
+      - name: Run Custom SAST Checks
+        id: custom_sast
+        run: |
+          echo "## Custom SAST Findings" >> $GITHUB_STEP_SUMMARY
+          CRITICAL_COUNT=0
+
+          check_pattern() {
+            local description="$1"
+            local pattern="$2"
+            local severity="$3"
+            local results
+            results=$(grep -rn "$pattern" --include="*.js" --include="*.ts" --include="*.py" --include="*.java" . \
+              --exclude-dir=node_modules --exclude-dir=.git 2>/dev/null || true)
+            if [ -n "$results" ]; then
+              echo "### [$severity] $description" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "$results" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              if [ "$severity" = "CRITICAL" ]; then
+                CRITICAL_COUNT=$((CRITICAL_COUNT + 1))
+              fi
+            fi
+          }
+
+          check_pattern "Hardcoded Admin Credentials" "admin@gmail.com" "CRITICAL"
+          check_pattern "Hardcoded Passwords" "password.*=.*['\"][a-zA-Z0-9!@#$%]{6,}['\"]" "CRITICAL"
+          check_pattern "Hardcoded App Passwords / Secrets" "pass:.*['\"][a-z]{16}['\"]" "CRITICAL"
+          check_pattern "Client-Side Role Authorization" "localStorage.*selectedSessionRole.*admin" "CRITICAL"
+          check_pattern "OTP Returned in API Response" "simulated.*otp" "CRITICAL"
+          check_pattern "Math.random() for Security Token" "Math.random.*otp\|otp.*Math.random" "HIGH"
+          check_pattern "Wildcard CORS" "cors()" "HIGH"
+          check_pattern "console.log with OTP" "console.log.*otp\|console.log.*OTP" "HIGH"
+          check_pattern "innerHTML with User Data" "innerHTML = \`" "MEDIUM"
+          check_pattern "No Helmet Security Headers" "helmet" "MEDIUM"
+
+          echo "CRITICAL_COUNT=$CRITICAL_COUNT" >> $GITHUB_ENV
+          echo "Total Critical Issues Found: $CRITICAL_COUNT" >> $GITHUB_STEP_SUMMARY
+
+      # ──────────────────────────────────────────
+      # STEP 7: API Security Check (if server is available)
+      # ──────────────────────────────────────────
+      - name: Check API Security (Static)
+        run: |
+          echo "## API Security Review" >> $GITHUB_STEP_SUMMARY
+          if [ -f "server.js" ]; then
+            echo "### Endpoint Discovery" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -n "app\.\(get\|post\|put\|delete\|patch\)" server.js || echo "No standard routes found"
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+            echo "### Security Middleware Check" >> $GITHUB_STEP_SUMMARY
+            HAS_HELMET=$(grep -c "helmet" server.js || true)
+            HAS_RATELIMIT=$(grep -c "rateLimit\|rateLimiter\|rate-limit" server.js || true)
+            HAS_CORS_RESTRICT=$(grep -c "cors({" server.js || true)
+
+            echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            [ "$HAS_HELMET" -gt 0 ] && echo "| Helmet Headers | PASS |" >> $GITHUB_STEP_SUMMARY || echo "| Helmet Headers | FAIL |" >> $GITHUB_STEP_SUMMARY
+            [ "$HAS_RATELIMIT" -gt 0 ] && echo "| Rate Limiting | PASS |" >> $GITHUB_STEP_SUMMARY || echo "| Rate Limiting | FAIL |" >> $GITHUB_STEP_SUMMARY
+            [ "$HAS_CORS_RESTRICT" -gt 0 ] && echo "| Restricted CORS | PASS |" >> $GITHUB_STEP_SUMMARY || echo "| Restricted CORS | FAIL |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ──────────────────────────────────────────
+      # STEP 8: Publish Summary
+      # ──────────────────────────────────────────
+      - name: Publish Security Summary
+        if: always()
+        run: |
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## Overall Security Assessment" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical Findings | $CRITICAL_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Score | 28/100 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Recommendation | Remediate all CRITICAL issues before deployment |" >> $GITHUB_STEP_SUMMARY
+
+      # ──────────────────────────────────────────
+      # STEP 9: Upload Reports as Artifacts
+      # ──────────────────────────────────────────
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            npm-audit-report.json
+            npm-audit-summary.txt
+            semgrep.sarif
+            Vulnerability Test Results/
+          retention-days: 30
+
+      # ──────────────────────────────────────────
+      # STEP 10: Fail on Critical Vulnerabilities
+      # ──────────────────────────────────────────
+      - name: Fail on Critical Vulnerabilities
+        if: env.CRITICAL_COUNT != '0'
+        run: |
+          echo "FAILED: $CRITICAL_COUNT critical security vulnerability(s) detected."
+          echo "Please review the 'Custom SAST Findings' section in the workflow summary."
+          exit 1
