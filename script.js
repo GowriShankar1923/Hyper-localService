@@ -1835,8 +1835,8 @@ const logoutBtn = document.getElementById('logout-btn');
                 if (isWorker) {
                     if (booking.status === 'Pending') {
                         actionsHtml += `
-                            <div class="dropdown-item accept-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: green; border-bottom: 1px solid #eee;"> Accept Work</div>
-                            <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;"> Cancel Work</div>
+                            <div class="dropdown-item accept-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: green; border-bottom: 1px solid #eee;"><i class="fa-solid fa-check"></i> Accept Request</div>
+                            <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;"><i class="fa-solid fa-times"></i> Cancel Request</div>
                         `;
                     } else if (booking.status === 'Accepted') {
                         actionsHtml += `
