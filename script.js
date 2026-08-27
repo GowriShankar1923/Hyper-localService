@@ -427,6 +427,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     document.getElementById('avatar-edit-btn').style.display = 'flex';
                     
                     try {
+                        await setDoc(doc(db, "config", "adminProfile"), { uid: user.uid }, { merge: true });
                         const adminProfileDoc = await getDoc(doc(db, "config", "adminProfile"));
                         if (adminProfileDoc.exists() && adminProfileDoc.data().profileImage) {
                             document.getElementById('profile-avatar-img').src = adminProfileDoc.data().profileImage;
@@ -2697,6 +2698,7 @@ window.fetchAdminCustomers = () => {
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
                         <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${isBlocked ? '#FFEBEE' : '#E8F5E9'};color:${isBlocked ? '#C62828' : '#2E7D32'};">${isBlocked ? 'BLOCKED' : 'ACTIVE'}</span>
+                        <button onclick="window.openChatModal('${data.uid}', '${(data.name || 'Customer').replace(/'/g, "\\'")}')" style="background:var(--primary-blue);color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;"><i class="fa-solid fa-message" style="margin-right:4px;"></i>Chat Now</button>
                         <div style="position:relative;">
                             <i class="fa-solid fa-ellipsis-vertical" style="padding:8px;cursor:pointer;color:#999;" onclick="const m=this.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';"></i>
                             <div style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.15);width:130px;z-index:50;">
@@ -3515,6 +3517,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let unsubInbox = null;
     let currentChatDocId = null;
 
+    window.openAdminSupportChat = async () => {
+        try {
+            const adminProfileDoc = await getDoc(doc(db, "config", "adminProfile"));
+            if (adminProfileDoc.exists() && adminProfileDoc.data().uid) {
+                window.openChatModal(adminProfileDoc.data().uid, 'Admin Support');
+            } else {
+                alert("Support is currently offline. Please try again later.");
+                window.openInboxModal();
+            }
+        } catch (e) {
+            console.error("Error fetching admin support info:", e);
+            window.openInboxModal();
+        }
+    };
+
     window.openChatModal = (otherUid, otherName) => {
         const modal = document.getElementById('chat-modal');
         const title = document.getElementById('chat-modal-title');
@@ -3719,38 +3736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const blockedChatBtn = document.getElementById('blocked-chat-btn');
     if (blockedChatBtn) {
         blockedChatBtn.addEventListener('click', async () => {
-            const modal = document.getElementById('inbox-modal');
-            if (modal && auth.currentUser) {
-                const myUid = auth.currentUser.uid;
-                const chatsRef = collection(db, 'chats');
-                const q = query(chatsRef, where('participants', 'array-contains', myUid));
-                
-                try {
-                    const snap = await getDocs(q);
-                    let adminUid = null;
-                    let adminName = 'Admin';
-                    
-                    snap.forEach(docSnap => {
-                        const data = docSnap.data();
-                        if (data.names) {
-                            const otherUid = data.participants.find(u => u !== myUid);
-                            if (data.names[otherUid] === 'Admin') {
-                                adminUid = otherUid;
-                                adminName = data.names[otherUid];
-                            }
-                        }
-                    });
-                    
-                    if (adminUid) {
-                        window.openChatModal(adminUid, adminName);
-                    } else {
-                        window.openInboxModal();
-                    }
-                } catch (e) {
-                    console.error("Error finding admin chat:", e);
-                    window.openInboxModal();
-                }
-            }
+            window.openAdminSupportChat();
         });
     }
 
