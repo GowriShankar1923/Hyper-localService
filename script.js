@@ -347,9 +347,6 @@ const logoutBtn = document.getElementById('logout-btn');
                     
                     alert(`Successfully completed ${updatedCount} active job(s). You are now available for booking!`);
                     
-                    if (window.fetchWorkerBookings) {
-                        window.fetchWorkerBookings(workerId);
-                    }
                 } catch(e) {
                     console.error("Failed to release worker:", e);
                     alert("Error releasing worker. See console.");
@@ -1033,7 +1030,7 @@ const logoutBtn = document.getElementById('logout-btn');
             if (lhBtn) lhBtn.style.display = 'flex';
             if (releaseBtn) releaseBtn.style.display = 'flex';
             if (auth.currentUser) {
-                fetchWorkerBookings(auth.currentUser.uid);
+                fetchAndPopulateWorkerLeave(auth.currentUser.uid);
                 fetchAndPopulateWorkerLeave(auth.currentUser.uid);
             }
         } else {
@@ -1494,252 +1491,6 @@ const logoutBtn = document.getElementById('logout-btn');
         });
     }
 
-    // Fetch Worker Bookings
-    window.fetchWorkerBookings = async (workerId, containerId = 'worker-jobs-list') => {
-        const jobsList = document.getElementById(containerId);
-        if (!jobsList) return;
-
-        jobsList.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading jobs...</div>';
-
-        try {
-            const q = query(collection(db, "bookings"), where("workerId", "==", workerId));
-            const querySnapshot = await getDocs(q);
-
-            if (querySnapshot.empty) {
-                jobsList.innerHTML = '<div class="empty-state">No jobs found.</div>';
-                return;
-            }
-
-            const bookings = [];
-            querySnapshot.forEach(doc => bookings.push({ id: doc.id, ...doc.data() }));
-
-            // Sort by timestamp (newest first)
-            bookings.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
-
-            jobsList.innerHTML = '';
-
-            let addedCount = 0;
-            bookings.forEach(booking => {
-                if (booking.status === 'Completed' || booking.status === 'Canceled') return; 
-                
-                addedCount++;
-
-                const card = document.createElement('div');
-                card.className = 'booking-card';
-
-                const dateObj = new Date(booking.date);
-                const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-
-                // Build dropdown action items based on status
-                let actionHtml = '';
-                if (booking.status === 'Pending') {
-                    actionHtml = `
-                        <div class="dropdown-item accept-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;">Accept Job</div>
-                        <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;">Cancel Job</div>
-                    `;
-                } else if (booking.status === 'Accepted') {
-                    actionHtml = `
-                        <div class="dropdown-item reached-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;">Mark as Reached</div>
-                        <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;">Cancel Job</div>
-                    `;
-                } else if (booking.status === 'Reached') {
-                    actionHtml = `
-                        <div class="dropdown-item job-done-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;">Mark Job Done</div>
-                        <div class="dropdown-item cancel-job-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;">Cancel Job</div>
-                    `;
-                } else if (booking.status === 'PaymentPending') {
-                    actionHtml = `<div class="dropdown-item force-complete-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: var(--accent-green); font-weight: bold;"> Mark Completed (Release)</div>`;
-                }
-
-                // Unique dropdown id per card
-                const dropdownId = `menu-drop-${booking.id}`;
-                const threeDotsInHeader = actionHtml ? `
-                    <div class="booking-menu" style="position: relative; display: inline-block; margin-left: 8px;">
-                        <i class="fa-solid fa-ellipsis-vertical toggle-menu" data-dropdown="${dropdownId}" style="cursor: pointer; padding: 5px 8px; color: #888; font-size: 18px; vertical-align: middle;"></i>
-                        <div id="${dropdownId}" class="menu-dropdown" style="position: absolute; right: 0; top: 110%; background: white; box-shadow: 0 4px 16px rgba(0,0,0,0.18); border-radius: 10px; z-index: 999; min-width: 180px; padding: 6px 0; display: none; border: 1px solid #eee;">
-                            ${actionHtml}
-                        </div>
-                    </div>
-                ` : '';
-
-                card.style.position = 'relative'; // Ensure three dots menu is positioned relative to the card
-
-                let extraWorkerHtml = '';
-                if (booking.status === 'PaymentPending') {
-                    extraWorkerHtml = `
-                        <div style="margin-top: 15px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 1px solid #ffe0b2;">
-                            <div style="font-size: 14px; color: #333; margin-bottom: 8px;"><strong>Worker:</strong> Enter OTP from customer to verify payment:</div>
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" id="inline-otp-worker-${booking.id}" placeholder="6-digit code" maxlength="6" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; outline: none; font-size: 16px;">
-                                <button class="login-btn inline-verify-btn-worker" data-id="${booking.id}" style="width: auto; padding: 0 20px; margin: 0; background-color: var(--accent-green);">Verify</button>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                const imgHtml = booking.image ? `<img src="${booking.image}" class="booking-image-thumb" alt="Problem Image">` : '';
-
-                card.innerHTML = `
-                    <div class="booking-header" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span class="booking-service">${booking.service}</span>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span class="booking-status status-${booking.status.toLowerCase()}">${booking.status}</span>
-                            ${threeDotsInHeader}
-                        </div>
-                    </div>
-                    <div class="booking-details">
-                        <div style="flex: 1;">
-                            <div class="booking-info"><i class="fa-solid fa-calendar"></i> ${formattedDate}</div>
-                            <div class="booking-info"><i class="fa-solid fa-location-dot"></i> ${booking.address}</div>
-                            ${booking.description ? `<div class="booking-info"><i class="fa-solid fa-circle-info"></i> ${booking.description}</div>` : ''}
-                            ${booking.amount ? `<div class="booking-info" style="color: var(--accent-green); font-weight: bold;"><i class="fa-solid fa-indian-rupee-sign"></i> ${booking.amount} to collect</div>` : ''}
-                        </div>
-                        ${imgHtml}
-                    </div>
-                    ${extraWorkerHtml}
-                `;
-                jobsList.appendChild(card);
-            });
-
-            if (addedCount === 0) {
-                jobsList.innerHTML = '<div class="empty-state">No active jobs found.</div>';
-            }
-
-            // 3-dots menu: each icon references its dropdown by unique ID
-            document.querySelectorAll(`#${containerId} .toggle-menu`).forEach(icon => {
-                icon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const targetId = this.getAttribute('data-dropdown');
-                    const dropdown = document.getElementById(targetId);
-                    if (!dropdown) return;
-                    // Close all other open dropdowns
-                    document.querySelectorAll('.menu-dropdown').forEach(d => {
-                        if (d.id !== targetId) d.style.display = 'none';
-                    });
-                    // Toggle this dropdown
-                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                });
-            });
-
-            // Close all dropdowns on outside click (register only once)
-            if (!window._workerMenuCloseListener) {
-                window._workerMenuCloseListener = true;
-                document.addEventListener('click', function() {
-                    document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
-                });
-            }
-
-            // Attach action listeners
-            document.querySelectorAll(`#${containerId} .inline-verify-btn-worker`).forEach(btn => {
-                btn.onclick = async () => {
-                    const id = btn.getAttribute('data-id');
-                    const inputElement = document.getElementById(`inline-otp-worker-${id}`);
-                    const enteredOtp = inputElement.value.trim();
-                    if (!enteredOtp) {
-                        alert("Please enter the 6-digit OTP provided by the customer.");
-                        return;
-                    }
-
-                    const bookingDoc = await getDoc(doc(db, "bookings", id));
-                    if (bookingDoc.exists()) {
-                        const booking = bookingDoc.data();
-                        if (booking.otp === enteredOtp) {
-                            await updateDoc(doc(db, "bookings", id), { status: 'Completed' });
-                            alert("Payment Verified & Job Completed!");
-                            addNotification(booking.userId, `Payment verified successfully. Job Completed!`);
-                            fetchWorkerBookings(workerId, containerId);
-                        } else {
-                            alert("Invalid OTP! Please check with the customer.");
-                        }
-                    }
-                };
-            });
-
-            document.querySelectorAll(`#${containerId} .force-complete-btn`).forEach(btn => {
-                btn.onclick = async () => {
-                    if (confirm("Are you sure you want to mark this job as completed? This will bypass the OTP and release you for other bookings.")) {
-                        const id = btn.getAttribute('data-id');
-                        await updateDoc(doc(db, "bookings", id), { status: 'Completed' });
-                        alert("Job forcefully completed. You are now available for other bookings!");
-                        
-                        const bookingDoc = await getDoc(doc(db, "bookings", id));
-                        if(bookingDoc.exists()) {
-                            addNotification(bookingDoc.data().userId, "Your worker has marked the job as Completed.");
-                        }
-                        fetchWorkerBookings(workerId, containerId);
-                    }
-                };
-            });
-
-            document.querySelectorAll(`#${containerId} .accept-job-btn`).forEach(btn => {
-                btn.onclick = async () => {
-                    const id = btn.getAttribute('data-id');
-                    await updateDoc(doc(db, "bookings", id), { status: 'Accepted' });
-                    fetchWorkerBookings(workerId, containerId);
-                    
-                    const bookingDoc = await getDoc(doc(db, "bookings", id));
-                    if(bookingDoc.exists()) {
-                        addNotification(bookingDoc.data().userId, "A worker has accepted your job request!");
-                    }
-                };
-            });
-
-            document.querySelectorAll(`#${containerId} .reached-job-btn`).forEach(btn => {
-                btn.onclick = async () => {
-                    const id = btn.getAttribute('data-id');
-                    await updateDoc(doc(db, "bookings", id), { status: 'Reached' });
-                    fetchWorkerBookings(workerId, containerId);
-                    
-                    const bookingDoc = await getDoc(doc(db, "bookings", id));
-                    if(bookingDoc.exists()) {
-                        addNotification(bookingDoc.data().userId, "The worker has reached your home.");
-                    }
-                };
-            });
-
-            document.querySelectorAll(`#${containerId} .cancel-job-btn`).forEach(btn => {
-                btn.onclick = async () => {
-                    if (confirm("Are you sure you want to cancel this booking?")) {
-                        const id = btn.getAttribute('data-id');
-                        await updateDoc(doc(db, "bookings", id), { status: 'Canceled' });
-                        fetchWorkerBookings(workerId, containerId);
-                        
-                        const bookingDoc = await getDoc(doc(db, "bookings", id));
-                        if(bookingDoc.exists()) {
-                            addNotification(bookingDoc.data().userId, "The worker has canceled your booking.");
-                        }
-                    }
-                };
-            });
-
-            document.querySelectorAll(`#${containerId} .job-done-btn`).forEach(btn => {
-                btn.onclick = () => {
-                    const id = btn.getAttribute('data-id');
-                    const modal = document.getElementById('amount-modal');
-                    const form = document.getElementById('amount-form');
-                    form.setAttribute('data-booking-id', id);
-                    modal.style.display = 'flex';
-                    setTimeout(() => modal.classList.remove('hidden'), 50);
-                };
-            });
-
-            document.querySelectorAll('.verify-otp-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const id = btn.getAttribute('data-id');
-                    const modal = document.getElementById('otp-verify-modal');
-                    const form = document.getElementById('otp-verify-form');
-                    form.setAttribute('data-booking-id', id);
-                    modal.style.display = 'flex';
-                    setTimeout(() => modal.classList.remove('hidden'), 50);
-                };
-            });
-
-        } catch (error) {
-            console.error("Error fetching worker bookings:", error);
-            jobsList.innerHTML = '<div class="empty-state">Failed to load jobs.</div>';
-        }
-    };
-
     // Amount Modal Logic
     const closeAmountModal = document.getElementById('close-amount-modal');
     if(closeAmountModal) {
@@ -1770,7 +1521,6 @@ const logoutBtn = document.getElementById('logout-btn');
             
             closeAmountModal.click();
             amountForm.reset();
-            fetchWorkerBookings(auth.currentUser.uid, 'worker-jobs-list');
             if (window.fetchBookings) fetchBookings(auth.currentUser.uid);
         };
     }
@@ -1813,7 +1563,6 @@ const logoutBtn = document.getElementById('logout-btn');
                     await updateDoc(doc(db, "bookings", id), { status: 'Completed' });
                     closeOtpVerifyModal.click();
                     otpVerifyForm.reset();
-                    fetchWorkerBookings(auth.currentUser.uid, 'worker-jobs-list');
                     if (window.fetchBookings) fetchBookings(auth.currentUser.uid);
                     alert("Payment Verified & Job Completed!");
                     
@@ -1908,6 +1657,9 @@ const logoutBtn = document.getElementById('logout-btn');
                         `;
                     }
                 } else {
+                    if (booking.status === 'Pending') {
+                        actionsHtml += `<div class="dropdown-item cancel-job-btn-customer" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;"> Cancel Order</div>`;
+                    }
                     if (booking.status === 'PaymentPending') {
                         extraHtml += `
                             <div style="margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
@@ -1921,7 +1673,6 @@ const logoutBtn = document.getElementById('logout-btn');
                             </div>
                         `;
                     }
-                    // Customer Cancel Booking is already removed
                 }
 
 
