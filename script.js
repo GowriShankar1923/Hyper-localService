@@ -1987,6 +1987,16 @@ const logoutBtn = document.getElementById('logout-btn');
 
             history.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
             historyList.innerHTML = '';
+            
+            // Pre-fetch all worker data for the history list
+            const workerIds = [...new Set(history.map(b => b.workerId).filter(Boolean))];
+            const workerDataMap = {};
+            
+            await Promise.all(workerIds.map(async (wId) => {
+                let wDoc = await getDoc(doc(db, 'customers', wId));
+                if (!wDoc.exists()) wDoc = await getDoc(doc(db, 'workers', wId));
+                if (wDoc.exists()) workerDataMap[wId] = wDoc.data();
+            }));
 
             history.forEach(booking => {
                 const card = document.createElement('div');
@@ -1994,6 +2004,39 @@ const logoutBtn = document.getElementById('logout-btn');
                 card.style.cursor = 'pointer'; // Make it look clickable
                 const dateObj = new Date(booking.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                
+                let workerNameStr = 'Unknown Worker';
+                let ratingDisplayHtml = '';
+                
+                if (booking.workerId && workerDataMap[booking.workerId]) {
+                    const wData = workerDataMap[booking.workerId];
+                    workerNameStr = wData.name || 'Worker';
+                    
+                    if (booking.isRated) {
+                        const ratings = wData.ratings || [];
+                        const myRating = ratings.find(r => r.bookingId === booking.id);
+                        if (myRating) {
+                            ratingDisplayHtml = `
+                                <div style="margin-top:12px; padding:10px; background:#f5f7fa; border-radius:8px; border:1px solid #e4e7eb;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                        <span style="font-size:12px; font-weight:600; color:#444;">Your Rating</span>
+                                        <span style="font-size:12px; color:var(--primary-blue); cursor:pointer; text-decoration:underline;">View Comments</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px; margin-bottom:4px;">
+                                        <i class="fa-solid fa-star" style="color:#FFD700; font-size:12px;"></i> <strong style="font-size:13px;">${myRating.stars}</strong>
+                                    </div>
+                                    ${myRating.comment ? `<div style="font-size:12px; color:#666; font-style:italic;">"${myRating.comment}"</div>` : ''}
+                                </div>
+                            `;
+                        } else {
+                            ratingDisplayHtml = `
+                                <div style="margin-top:12px; font-size:12px; color:var(--primary-blue); cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
+                                    View Worker Ratings & Comments
+                                </div>
+                            `;
+                        }
+                    }
+                }
                 
                 card.onclick = () => {
                     const modal = document.getElementById('receipt-modal');
@@ -2035,11 +2078,13 @@ const logoutBtn = document.getElementById('logout-btn');
                     </div>
                     <div class="booking-details">
                         <div class="booking-info">
+                            <div style="font-weight:600; color:#333; margin-bottom:4px; font-size:14px;"><i class="fa-solid fa-user-tie" style="color:var(--primary-blue); margin-right:4px;"></i> ${workerNameStr}</div>
                             <div><i class="fa-solid fa-calendar-days"></i> ${formattedDate}</div>
                             ${!isCanceled ? `<div><i class="fa-solid fa-indian-rupee-sign"></i> Paid: ${booking.amount || 0}</div>` : ''}
                         </div>
                         ${imgHtml}
                     </div>
+                    ${ratingDisplayHtml}
                 `;
                 historyList.appendChild(card);
             });
@@ -3872,6 +3917,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stars: currentRatingStars,
                 comment: commentText,
                 customerName: customerName,
+                bookingId: currentRatingBookingId,
                 date: new Date().toISOString()
             };
 
