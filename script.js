@@ -1161,7 +1161,7 @@ const logoutBtn = document.getElementById('logout-btn');
                         const workerLoc = data.location.toLowerCase().trim();
                         const userLoc = location.toLowerCase().trim();
                         if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
-                            workers.push({ id: data.uid || doc.id, ...data });
+                            workers.push({ id: data.uid || doc.id, docId: doc.id, ...data });
                         }
                     }
                 }
@@ -1200,7 +1200,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     btnHtml = `<div class="service-book-btn" style="background: #ccc; cursor: not-allowed; text-align: center;">Currently Busy</div>`;
                     statusBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #ffebee; color: red; border-radius: 4px; margin-left: 5px;">Busy</span>';
                 } else {
-                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
+                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-doc-id="${worker.docId || ''}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
                 }
                 
                 let avgRating = 0;
@@ -1310,7 +1310,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     btnHtml = `<div class="service-book-btn" style="background: #ccc; cursor: not-allowed; text-align: center;">Currently Busy</div>`;
                     statusBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #ffebee; color: red; border-radius: 4px; margin-left: 5px;">Busy</span>';
                 } else {
-                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
+                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-doc-id="${worker.docId || ''}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
                 }
                 
                 let avgRating = 0;
@@ -1390,9 +1390,9 @@ const logoutBtn = document.getElementById('logout-btn');
                     if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
                         // Deduplicate by UID or exact Name in case of multiple test profile documents
                         if (!workers.find(w => w.uid === data.uid || (w.name && w.name === data.name))) {
-                            // Store BOTH doc.id (Firestore document ID) and uid (auth UID)
-                            // doc.id is used for direct document updates, uid for authentication
-                            workers.push({ id: doc.id, uid: data.uid, ...data });
+                            // Use data.uid as worker.id so workerId in bookings matches worker's auth UID
+                            // Also store docId for direct Firestore document operations (e.g. saving ratings)
+                            workers.push({ id: data.uid, docId: doc.id, ...data });
                         }
                     }
                 }
@@ -1424,10 +1424,12 @@ const logoutBtn = document.getElementById('logout-btn');
                 currentServiceToBook = e.currentTarget.getAttribute('data-service');
                 const workerName = e.currentTarget.getAttribute('data-worker-name');
                 const workerId = e.currentTarget.getAttribute('data-worker-id');
+                const workerDocId = e.currentTarget.getAttribute('data-worker-doc-id') || '';
                 
                 bookingTitle.textContent = `Book ${workerName} (${currentServiceToBook})`;
-                // Store worker ID for submission if needed later
+                // Store worker ID and docId for submission
                 bookingForm.setAttribute('data-target-worker-id', workerId);
+                bookingForm.setAttribute('data-target-worker-doc-id', workerDocId);
                 
                 bookingModal.classList.remove('hidden');
                 setTimeout(() => bookingModal.classList.add('open'), 10);
@@ -1550,12 +1552,14 @@ const logoutBtn = document.getElementById('logout-btn');
 
             try {
                 const targetWorkerId = bookingForm.getAttribute('data-target-worker-id');
+                const targetWorkerDocId = bookingForm.getAttribute('data-target-worker-doc-id') || '';
                 // Ensure chat deletion is canceled when a new booking is created
                 if (window.cancelChatDeletion) window.cancelChatDeletion(user.uid, targetWorkerId);
 
                 await addDoc(collection(db, "bookings"), {
                     userId: user.uid,
                     workerId: targetWorkerId,
+                    workerDocId: targetWorkerDocId,
                     service: currentServiceToBook,
                     date: date,
                     address: fullAddress,
@@ -2094,7 +2098,7 @@ const logoutBtn = document.getElementById('logout-btn');
                         <div style="position:relative;">
                             <i class="fa-solid fa-ellipsis-vertical" style="padding: 5px 10px; cursor: pointer; color: #999;" onclick="event.stopPropagation(); const m=this.nextElementSibling; m.style.display=m.style.display==='block'?'none':'block';"></i>
                             <div style="display:none; position:absolute; right:0; top:100%; background:white; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.15); width:130px; z-index:50;">
-                                <button onclick="event.stopPropagation(); window.openRatingModal('${booking.id}', '${booking.workerId}')" style="width:100%; text-align:left; padding:10px 14px; border:none; background:none; cursor:pointer; font-size:13px; color:var(--primary-blue);"><i class="fa-solid fa-star" style="margin-right:6px;"></i> Rate Worker</button>
+                                <button onclick="event.stopPropagation(); window.openRatingModal('${booking.id}', '${booking.workerId}', '${booking.workerDocId || ''}')" style="width:100%; text-align:left; padding:10px 14px; border:none; background:none; cursor:pointer; font-size:13px; color:var(--primary-blue);"><i class="fa-solid fa-star" style="margin-right:6px;"></i> Rate Worker</button>
                             </div>
                         </div>
                     `;
@@ -3889,9 +3893,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentRatingWorkerId = null;
     let currentRatingStars = 0;
 
-    window.openRatingModal = (bookingId, workerId) => {
+    let currentRatingWorkerDocId = null;
+
+    window.openRatingModal = (bookingId, workerId, workerDocId) => {
         currentRatingBookingId = bookingId;
         currentRatingWorkerId = workerId;
+        currentRatingWorkerDocId = workerDocId || null;
         currentRatingStars = 0;
         
         // Reset stars
@@ -3954,15 +3961,26 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             // Find the actual Firestore document for this worker
-            // currentRatingWorkerId may be a doc.id OR a uid (auth UID)
             let workerRef = null;
             
+            // Try 0: use workerDocId directly if available (most reliable — actual Firestore doc ID)
+            if (currentRatingWorkerDocId) {
+                const docIdRef = doc(db, 'customers', currentRatingWorkerDocId);
+                const docIdSnap = await getDoc(docIdRef);
+                if (docIdSnap.exists()) {
+                    workerRef = docIdRef;
+                    console.log('Rating: found worker by workerDocId (best match)');
+                }
+            }
+            
             // Try 1: direct doc.id lookup in customers (works when workerId = doc.id)
-            const directCustomerRef = doc(db, 'customers', currentRatingWorkerId);
-            const directCustomerSnap = await getDoc(directCustomerRef);
-            if (directCustomerSnap.exists()) {
-                workerRef = directCustomerRef;
-                console.log('Rating: found worker by doc.id in customers');
+            if (!workerRef) {
+                const directCustomerRef = doc(db, 'customers', currentRatingWorkerId);
+                const directCustomerSnap = await getDoc(directCustomerRef);
+                if (directCustomerSnap.exists()) {
+                    workerRef = directCustomerRef;
+                    console.log('Rating: found worker by doc.id in customers');
+                }
             }
             
             // Try 2: query customers by uid field (works when workerId = auth uid)
