@@ -3484,7 +3484,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 msgs.forEach(m => {
                     const el = document.createElement('div');
-                    const isMyMsg = (m.sender === myUid);
+                    let isMyMsg = false;
+                    if (myUid === otherUid && m.role) {
+                        isMyMsg = (m.role === myRole);
+                    } else {
+                        isMyMsg = (m.sender === myUid);
+                    }
                     el.className = `chat-bubble ${isMyMsg ? 'user' : 'admin'}`;
                     el.textContent = m.text;
                     container.appendChild(el);
@@ -3548,13 +3553,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const otherName = chat.names ? chat.names[otherUid] : 'User';
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 
+                const isMyMsg = (myUid === otherUid && lastMsg.role) ? (lastMsg.role === myRole) : (lastMsg.sender === myUid);
+                
                 const el = document.createElement('div');
                 el.className = 'inbox-item';
                 el.innerHTML = `
                     <div class="inbox-item-avatar">${otherName.charAt(0).toUpperCase()}</div>
                     <div class="inbox-item-details">
                         <div class="inbox-item-name">${otherName}</div>
-                        <div class="inbox-item-preview">${lastMsg.sender === myUid ? 'You: ' : ''}${lastMsg.text}</div>
+                        <div class="inbox-item-preview">${isMyMsg ? 'You: ' : ''}${lastMsg.text}</div>
                     </div>
                 `;
                 el.onclick = () => {
@@ -3574,9 +3581,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = chatInput.value.trim();
             if (!text || !currentChatDocId || !auth.currentUser) return;
             
+            const myRole = window.selectedSessionRole || localStorage.getItem('selectedSessionRole') || 'customer';
             const chatRef = doc(db, 'chats', currentChatDocId);
             const msgObj = {
                 sender: auth.currentUser.uid,
+                role: myRole,
                 text: text,
                 timestamp: Date.now()
             };
