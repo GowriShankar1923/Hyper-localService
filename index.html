@@ -275,7 +275,8 @@
                             </div>
                         </div>
                         
-                        <div class="header-menu-container" style="position: relative;">
+                        <div class="header-menu-container" style="position: relative; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-message" id="home-msg-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444;"></i>
                             <i class="fa-solid fa-ellipsis-vertical menu-dots-icon" id="home-menu-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444;"></i>
                             <div id="home-dropdown-menu" class="hidden" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 140px; z-index: 1000;">
                                     <button id="home-logout-btn" style="width: 100%; padding: 10px; background: none; border: none; text-align: left; cursor: pointer; font-size: 14px; color: #d32f2f;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
@@ -1026,9 +1027,27 @@
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
-    <script type="module" src="script.js?v=13"></script>
+    <!-- Chat Modal -->
+    <div id="chat-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: flex-end; sm:align-items:center;">
+        <div class="chat-modal-content">
+            <div class="chat-header">
+                <h3 id="chat-modal-title" style="margin: 0; font-size: 16px; color: white;">Chat</h3>
+                <i class="fa-solid fa-xmark" id="chat-close-btn" style="cursor: pointer; color: white; font-size: 20px; padding: 5px;"></i>
+            </div>
+            <div id="chat-messages-container" class="chat-messages">
+                <!-- Messages populate here -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input-field" placeholder="Type a message..." autocomplete="off">
+                <button id="chat-send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script type="module" src="script.js"></script>
 
     <!-- Register Service Worker -->
     <script>

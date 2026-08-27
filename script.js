@@ -2888,6 +2888,7 @@ window.fetchAdminWorkers = () => {
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
                         <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${isBlocked ? '#FFEBEE' : '#F3E5F5'};color:${isBlocked ? '#C62828' : '#6A1B9A'};">${isBlocked ? 'BLOCKED' : 'ACTIVE'}</span>
+                        <button onclick="window.openChatModal('${data.uid}', '${data.name || 'Worker'}', true)" style="background:var(--primary-blue);color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;"><i class="fa-solid fa-message" style="margin-right:4px;"></i>Chat Now</button>
                         <div style="position:relative;">
                             <i class="fa-solid fa-ellipsis-vertical" style="padding:8px;cursor:pointer;color:#999;" onclick="const m=this.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';"></i>
                             <div style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.15);width:130px;z-index:50;">
@@ -3632,4 +3633,107 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    });
+    // --- CHAT SYSTEM LOGIC ---
+    let unsubChat = null;
+    let currentChatTargetUid = null;
+    let isCurrentChatAdmin = false;
+
+    window.openChatModal = (targetUid, targetName, isAdminView) => {
+        const modal = document.getElementById('chat-modal');
+        const title = document.getElementById('chat-modal-title');
+        const container = document.getElementById('chat-messages-container');
+        
+        if (!modal) return;
+        
+        currentChatTargetUid = targetUid;
+        isCurrentChatAdmin = isAdminView;
+        
+        title.textContent = isAdminView ? `Chat with ${targetName}` : 'Chat with Admin';
+        modal.style.display = 'flex';
+        container.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        
+        if (unsubChat) unsubChat();
+        
+        const chatDocId = `admin_${targetUid}`;
+        const chatRef = doc(db, 'chats', chatDocId);
+        
+        unsubChat = onSnapshot(chatRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888; font-size: 13px;">No messages yet. Send a message to start!</div>';
+                return;
+            }
+            const data = snapshot.data();
+            const msgs = data.messages || [];
+            
+            container.innerHTML = '';
+            if (msgs.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888; font-size: 13px;">No messages yet. Send a message to start!</div>';
+            } else {
+                msgs.forEach(m => {
+                    const el = document.createElement('div');
+                    const isMyMsg = isAdminView ? (m.sender === 'admin') : (m.sender === 'user');
+                    el.className = `chat-bubble ${isMyMsg ? 'user' : 'admin'}`;
+                    el.textContent = m.text;
+                    container.appendChild(el);
+                });
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    };
+
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatInput = document.getElementById('chat-input-field');
+    
+    if (chatSendBtn && chatInput) {
+        const handleSend = async () => {
+            const text = chatInput.value.trim();
+            if (!text || !currentChatTargetUid) return;
+            
+            const chatDocId = `admin_${currentChatTargetUid}`;
+            const chatRef = doc(db, 'chats', chatDocId);
+            const msgObj = {
+                sender: isCurrentChatAdmin ? 'admin' : 'user',
+                text: text,
+                timestamp: Date.now()
+            };
+            
+            chatInput.value = '';
+            
+            try {
+                // We use setDoc with merge so if the document doesn't exist, it is created
+                await setDoc(chatRef, {
+                    userId: currentChatTargetUid,
+                    messages: arrayUnion(msgObj)
+                }, { merge: true });
+            } catch (e) {
+                console.error("Error sending message:", e);
+                alert("Failed to send message");
+            }
+        };
+        chatSendBtn.addEventListener('click', handleSend);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    }
+
+    const chatCloseBtn = document.getElementById('chat-close-btn');
+    if (chatCloseBtn) {
+        chatCloseBtn.addEventListener('click', () => {
+            document.getElementById('chat-modal').style.display = 'none';
+            if (unsubChat) unsubChat();
+            currentChatTargetUid = null;
+        });
+    }
+    
+    const homeMsgBtn = document.getElementById('home-msg-btn');
+    if (homeMsgBtn) {
+        homeMsgBtn.addEventListener('click', () => {
+            if (auth.currentUser) {
+                window.openChatModal(auth.currentUser.uid, 'Admin', false);
+            } else {
+                alert("Please log in to chat.");
+            }
+        });
+    }
+
+});
