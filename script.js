@@ -1049,6 +1049,10 @@ const logoutBtn = document.getElementById('logout-btn');
             const lhBtn = document.getElementById('home-leave-history-btn');
             if (lhBtn) lhBtn.style.display = 'block';
             if (releaseBtn) releaseBtn.style.display = 'flex';
+            const profNotif = document.getElementById('profile-notification-item');
+            if (profNotif) profNotif.style.display = 'none';
+            const navNotif = document.getElementById('nav-notification-item');
+            if (navNotif) navNotif.style.display = 'none';
             if (auth.currentUser) {
                 fetchAndPopulateWorkerLeave(auth.currentUser.uid);
                 fetchAndPopulateWorkerLeave(auth.currentUser.uid);
@@ -1059,6 +1063,10 @@ const logoutBtn = document.getElementById('logout-btn');
             if (releaseBtn) releaseBtn.style.display = 'none';
             const lhBtn3 = document.getElementById('home-leave-history-btn');
             if (lhBtn3) lhBtn3.style.display = 'none';
+            const profNotif2 = document.getElementById('profile-notification-item');
+            if (profNotif2) profNotif2.style.display = 'flex';
+            const navNotif2 = document.getElementById('nav-notification-item');
+            if (navNotif2) navNotif2.style.display = 'flex';
             currentCustomerLocation = location || 'Unknown Location';
             window.currentCustomerLocation = currentCustomerLocation;
 
