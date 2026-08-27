@@ -1511,6 +1511,7 @@ const logoutBtn = document.getElementById('logout-btn');
                 const dateObj = new Date(booking.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
+                // Build dropdown action items based on status
                 let actionHtml = '';
                 if (booking.status === 'Pending') {
                     actionHtml = `
@@ -1530,10 +1531,13 @@ const logoutBtn = document.getElementById('logout-btn');
                 } else if (booking.status === 'PaymentPending') {
                     actionHtml = `<div class="dropdown-item force-complete-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: var(--accent-green); font-weight: bold;"> Mark Completed (Release)</div>`;
                 }
+
+                // Unique dropdown id per card
+                const dropdownId = `menu-drop-${booking.id}`;
                 const threeDotsInHeader = actionHtml ? `
                     <div class="booking-menu" style="position: relative; display: inline-block; margin-left: 8px;">
-                        <i class="fa-solid fa-ellipsis-vertical toggle-menu" style="cursor: pointer; padding: 5px 8px; color: #888; font-size: 18px; vertical-align: middle;"></i>
-                        <div class="menu-dropdown" style="position: absolute; right: 0; top: 110%; background: white; box-shadow: 0 4px 16px rgba(0,0,0,0.18); border-radius: 10px; z-index: 999; min-width: 180px; padding: 6px 0; display: none; border: 1px solid #eee;">
+                        <i class="fa-solid fa-ellipsis-vertical toggle-menu" data-dropdown="${dropdownId}" style="cursor: pointer; padding: 5px 8px; color: #888; font-size: 18px; vertical-align: middle;"></i>
+                        <div id="${dropdownId}" class="menu-dropdown" style="position: absolute; right: 0; top: 110%; background: white; box-shadow: 0 4px 16px rgba(0,0,0,0.18); border-radius: 10px; z-index: 999; min-width: 180px; padding: 6px 0; display: none; border: 1px solid #eee;">
                             ${actionHtml}
                         </div>
                     </div>
@@ -1582,24 +1586,26 @@ const logoutBtn = document.getElementById('logout-btn');
                 jobsList.innerHTML = '<div class="empty-state">No active jobs found.</div>';
             }
 
-            // 3-dots menu logic - use addEventListener so stopPropagation works correctly
-            document.querySelectorAll(`#${containerId} .toggle-menu`).forEach(btn => {
-                btn.addEventListener('click', (e) => {
+            // 3-dots menu: each icon references its dropdown by unique ID
+            document.querySelectorAll(`#${containerId} .toggle-menu`).forEach(icon => {
+                icon.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    const menu = btn.closest('.booking-menu');
-                    const dropdown = menu ? menu.querySelector('.menu-dropdown') : null;
+                    const targetId = this.getAttribute('data-dropdown');
+                    const dropdown = document.getElementById(targetId);
                     if (!dropdown) return;
-                    const isOpen = dropdown.style.display === 'block';
-                    // Close all other dropdowns first
-                    document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
-                    // Toggle this one
-                    dropdown.style.display = isOpen ? 'none' : 'block';
+                    // Close all other open dropdowns
+                    document.querySelectorAll('.menu-dropdown').forEach(d => {
+                        if (d.id !== targetId) d.style.display = 'none';
+                    });
+                    // Toggle this dropdown
+                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
                 });
             });
-            // Register global close listener only once
-            if (!window._menuCloseListenerAdded) {
-                window._menuCloseListenerAdded = true;
-                document.addEventListener('click', () => {
+
+            // Close all dropdowns on outside click (register only once)
+            if (!window._workerMenuCloseListener) {
+                window._workerMenuCloseListener = true;
+                document.addEventListener('click', function() {
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
                 });
             }
