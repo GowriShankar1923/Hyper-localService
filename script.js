@@ -4002,17 +4002,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Admin Comments Logic
+    // Ratings & Reviews Modal Logic (Amazon/Flipkart style)
     window.openAdminComments = async (workerId, workerName) => {
         const modal = document.getElementById('admin-comments-modal');
         const listContainer = document.getElementById('admin-comments-list');
-        listContainer.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+        const titleEl = document.getElementById('comments-modal-title');
+        if (titleEl) titleEl.textContent = workerName ? `${workerName} — Reviews` : 'Ratings & Reviews';
+        listContainer.innerHTML = '<div style="text-align:center; padding: 30px;"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px; color:#ccc;"></i></div>';
         modal.style.display = 'flex';
 
         try {
             let ratingsData = null;
 
-            // Query by uid field (not document ID) to handle auto-ID documents
             const qCustomer = query(collection(db, 'customers'), where('uid', '==', workerId));
             const snapCustomer = await getDocs(qCustomer);
             if (!snapCustomer.empty) {
@@ -4023,51 +4024,100 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!snapWorker.empty) {
                     ratingsData = snapWorker.docs[0].data();
                 } else {
-                    // Fallback: direct doc ID lookup
                     let workerDoc = await getDoc(doc(db, 'customers', workerId));
-                    if (!workerDoc.exists()) {
-                        workerDoc = await getDoc(doc(db, 'workers', workerId));
-                    }
+                    if (!workerDoc.exists()) workerDoc = await getDoc(doc(db, 'workers', workerId));
                     if (workerDoc.exists()) ratingsData = workerDoc.data();
                 }
             }
 
-            if (ratingsData) {
-                const data = ratingsData;
-                const ratings = data.ratings || [];
-                
-                if (ratings.length === 0) {
-                    listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No ratings or comments yet.</div>';
-                    return;
-                }
-
-                ratings.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                let html = '';
-                ratings.forEach(r => {
-                    let starsHtml = '';
-                    for (let i = 1; i <= 5; i++) {
-                        starsHtml += `<i class="fa-solid fa-star" style="color: ${i <= r.stars ? '#FFD700' : '#ddd'}; font-size: 12px;"></i>`;
-                    }
-                    
-                    const dateStr = new Date(r.date).toLocaleDateString();
-                    html += `
-                        <div style="padding: 15px; border-bottom: 1px solid #f0f0f0;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <strong style="font-size: 14px; color: #333;">${r.customerName}</strong>
-                                <span style="font-size: 12px; color: #999;">${dateStr}</span>
-                            </div>
-                            <div style="margin-bottom: 8px;">${starsHtml} <span style="font-size: 12px; color: #666; margin-left: 5px;">${ratingLabels[r.stars] || ''}</span></div>
-                            <div style="font-size: 14px; color: #555; line-height: 1.4;">${r.comment || '<i>No comment</i>'}</div>
-                        </div>
-                    `;
-                });
-                
-                listContainer.innerHTML = html;
+            if (!ratingsData) {
+                listContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">Worker not found.</div>';
+                return;
             }
+
+            const ratings = (ratingsData.ratings || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (ratings.length === 0) {
+                listContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#888;"><i class="fa-solid fa-star" style="font-size:32px; color:#ddd; display:block; margin-bottom:12px;"></i>No ratings yet. Be the first to review!</div>';
+                return;
+            }
+
+            // Calculate stats
+            const total = ratings.length;
+            const avgRaw = ratings.reduce((s, r) => s + r.stars, 0) / total;
+            const avg = avgRaw.toFixed(1);
+            const starCounts = [0, 0, 0, 0, 0]; // index 0 = 1-star
+            ratings.forEach(r => { if (r.stars >= 1 && r.stars <= 5) starCounts[r.stars - 1]++; });
+
+            // Summary block
+            const filledStars = Math.round(avgRaw);
+            const summaryStarsHtml = Array.from({length: 5}, (_, i) =>
+                `<i class="fa-solid fa-star" style="color:${i < filledStars ? '#FFD700' : '#ddd'}; font-size:18px;"></i>`
+            ).join('');
+
+            const barHtml = [5, 4, 3, 2, 1].map(star => {
+                const count = starCounts[star - 1];
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const barColor = star >= 4 ? '#2e7d32' : star === 3 ? '#f57c00' : '#c62828';
+                return `
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+                        <span style="font-size:12px; color:#555; min-width:10px;">${star}</span>
+                        <i class="fa-solid fa-star" style="color:#FFD700; font-size:11px;"></i>
+                        <div style="flex:1; background:#eee; border-radius:4px; height:8px; overflow:hidden;">
+                            <div style="width:${pct}%; background:${barColor}; height:100%; border-radius:4px; transition:width 0.4s;"></div>
+                        </div>
+                        <span style="font-size:12px; color:#888; min-width:18px;">${count}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Individual reviews
+            const reviewsHtml = ratings.map(r => {
+                const starsHtml = Array.from({length: 5}, (_, i) =>
+                    `<i class="fa-solid fa-star" style="color:${i < r.stars ? '#FFD700' : '#ddd'}; font-size:13px;"></i>`
+                ).join('');
+                const label = ratingLabels[r.stars] || '';
+                const dateStr = new Date(r.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                return `
+                    <div style="padding:14px 16px; border-bottom:1px solid #f3f3f3;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                            <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#1565C0,#42A5F5); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fa-solid fa-user" style="color:white; font-size:13px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:#222;">${r.customerName || 'Customer'}</div>
+                                <div style="font-size:11px; color:#aaa;">${dateStr}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                            <div style="background:${r.stars >= 4 ? '#2e7d32' : r.stars >= 3 ? '#f57c00' : '#c62828'}; color:white; font-size:12px; font-weight:700; padding:2px 8px; border-radius:12px; display:flex; align-items:center; gap:3px;">
+                                ${r.stars} <i class="fa-solid fa-star" style="font-size:10px;"></i>
+                            </div>
+                            <span style="font-size:12px; color:#666; font-weight:500;">${label}</span>
+                        </div>
+                        ${r.comment ? `<div style="font-size:13px; color:#444; line-height:1.5; background:#f9f9f9; padding:8px 10px; border-radius:8px; border-left:3px solid #FFD700;">${r.comment}</div>` : '<div style="font-size:12px; color:#bbb; font-style:italic;">No written review</div>'}
+                    </div>
+                `;
+            }).join('');
+
+            listContainer.innerHTML = `
+                <!-- Amazon/Flipkart Summary Header -->
+                <div style="padding:20px 16px; background:linear-gradient(135deg,#f8f9fa,#fff); border-bottom:1px solid #eee;">
+                    <div style="display:flex; gap:20px; align-items:center;">
+                        <div style="text-align:center; flex-shrink:0;">
+                            <div style="font-size:48px; font-weight:800; color:#222; line-height:1;">${avg}</div>
+                            <div style="margin:4px 0;">${summaryStarsHtml}</div>
+                            <div style="font-size:12px; color:#888;">${total} rating${total > 1 ? 's' : ''}</div>
+                        </div>
+                        <div style="flex:1;">${barHtml}</div>
+                    </div>
+                </div>
+                <!-- Individual Reviews -->
+                <div style="padding-bottom:20px;">${reviewsHtml}</div>
+            `;
         } catch (error) {
             console.error('Error fetching comments:', error);
-            listContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: red;">Error loading comments.</div>';
+            listContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: red;">Error loading reviews.</div>';
         }
     };
 
