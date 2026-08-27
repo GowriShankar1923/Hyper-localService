@@ -276,7 +276,7 @@
                         </div>
                         
                         <div class="header-menu-container" style="position: relative; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-message" id="home-msg-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444;"></i>
+                            <i class="fa-solid fa-message" id="home-msg-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444; position: relative; z-index: 2850;"></i>
                             <i class="fa-solid fa-ellipsis-vertical menu-dots-icon" id="home-menu-btn" style="font-size: 20px; cursor: pointer; padding: 10px; color: #444;"></i>
                             <div id="home-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 140px; z-index: 1000;">
                                 <button id="home-leave-history-btn" style="width: 100%; padding: 10px; background: none; border: none; text-align: left; cursor: pointer; font-size: 14px; color: #333; display: none; border-bottom: 1px solid #eee;"><i class="fa-solid fa-clock-rotate-left"></i> Leave History</button>
@@ -1055,6 +1055,13 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Blocked Worker Overlay -->
+    <div id="worker-blocked-overlay" style="display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); z-index: 2800; backdrop-filter: blur(5px); flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <i class="fa-solid fa-ban" style="font-size: 60px; color: #d32f2f; margin-bottom: 20px;"></i>
+        <h2 style="color: #333; margin-bottom: 15px;">Account Suspended</h2>
+        <p style="color: #666; max-width: 350px; font-size: 16px; line-height: 1.5;">Your account has been temporarily blocked by an administrator. You can still use the message feature to contact support.</p>
     </div>
 
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->

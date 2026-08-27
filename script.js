@@ -520,6 +520,26 @@ const logoutBtn = document.getElementById('logout-btn');
 
             // Fetch user profile data from Firestore
             try {
+                // Real-time listener for block status
+                if (window.blockListener) {
+                    window.blockListener();
+                }
+                const blockQ = query(collection(db, "customers"), where("uid", "==", user.uid));
+                window.blockListener = onSnapshot(blockQ, (snap) => {
+                    if (!snap.empty) {
+                        const data = snap.docs[0].data();
+                        const overlay = document.getElementById('worker-blocked-overlay');
+                        if (overlay) {
+                            const currentViewRole = window.selectedSessionRole || data.role;
+                            if (currentViewRole === 'worker' && data.status === 'blocked') {
+                                overlay.style.display = 'flex';
+                            } else {
+                                overlay.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+
                 const q = query(collection(db, "customers"), where("uid", "==", user.uid));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
@@ -2566,6 +2586,21 @@ window.fetchAdminOrders = () => {
     } catch(e) {
         console.error('Error fetching admin orders:', e);
         list.innerHTML = '<div style="color:red; padding: 20px;">Error loading orders.</div>';
+    }
+};
+
+window.toggleBlockUser = async (uid, newStatus) => {
+    try {
+        const q = query(collection(db, "customers"), where("uid", "==", uid));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+            await updateDoc(snap.docs[0].ref, { status: newStatus });
+        } else {
+            alert("User not found.");
+        }
+    } catch (e) {
+        console.error("Error updating user status:", e);
+        alert("Error updating user status: " + e.message);
     }
 };
 
