@@ -2014,24 +2014,30 @@ const logoutBtn = document.getElementById('logout-btn');
                     
                     if (booking.isRated) {
                         const ratings = wData.ratings || [];
-                        const myRating = ratings.find(r => r.bookingId === booking.id);
+                        // Try to find by bookingId first (new ratings), otherwise take the most recent
+                        let myRating = ratings.find(r => r.bookingId === booking.id);
+                        if (!myRating && ratings.length > 0) {
+                            // Fallback: show the most recent rating for this worker
+                            myRating = [...ratings].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                        }
                         if (myRating) {
+                            const starIcons = Array.from({length: 5}, (_, i) =>
+                                `<i class="fa-solid fa-star" style="color:${i < myRating.stars ? '#FFD700' : '#ddd'}; font-size:13px;"></i>`
+                            ).join('');
                             ratingDisplayHtml = `
-                                <div style="margin-top:12px; padding:10px; background:#f5f7fa; border-radius:8px; border:1px solid #e4e7eb;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                        <span style="font-size:12px; font-weight:600; color:#444;">Your Rating</span>
-                                        <span style="font-size:12px; color:var(--primary-blue); cursor:pointer; text-decoration:underline;">View Comments</span>
+                                <div style="margin-top:12px; padding:10px 12px; background:#f5f7fa; border-radius:8px; border:1px solid #e4e7eb; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                        <span style="font-size:12px; font-weight:600; color:#444;"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:4px;"></i>Your Rating</span>
+                                        <span style="font-size:11px; color:var(--primary-blue); text-decoration:underline;">View All Comments</span>
                                     </div>
-                                    <div style="display:flex; align-items:center; gap:4px; margin-bottom:4px;">
-                                        <i class="fa-solid fa-star" style="color:#FFD700; font-size:12px;"></i> <strong style="font-size:13px;">${myRating.stars}</strong>
-                                    </div>
-                                    ${myRating.comment ? `<div style="font-size:12px; color:#666; font-style:italic;">"${myRating.comment}"</div>` : ''}
+                                    <div style="margin-bottom:4px;">${starIcons}</div>
+                                    ${myRating.comment ? `<div style="font-size:12px; color:#666; font-style:italic; margin-top:4px;">"${myRating.comment}"</div>` : ''}
                                 </div>
                             `;
                         } else {
                             ratingDisplayHtml = `
                                 <div style="margin-top:12px; font-size:12px; color:var(--primary-blue); cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
-                                    View Worker Ratings & Comments
+                                    <i class="fa-solid fa-star" style="color:#FFD700; margin-right:4px;"></i>View Worker Ratings &amp; Comments
                                 </div>
                             `;
                         }
