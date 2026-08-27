@@ -2751,6 +2751,7 @@ window.fetchAdminOrders = () => {
         console.error('Error fetching admin orders:', e);
         list.innerHTML = '<div style="color:red; padding: 20px;">Error loading orders.</div>';
     }
+};
 
 window.deleteAdminUser = async (uid) => {
     if (confirm("Are you sure you want to permanently delete this user? This cannot be undone.")) {
