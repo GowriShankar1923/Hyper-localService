@@ -1000,7 +1000,12 @@ const logoutBtn = document.getElementById('logout-btn');
             if (adminHome) adminHome.classList.add('active');
             if (normalNav) { normalNav.style.display = 'none'; normalNav.classList.add('hidden'); }
             if (adminNav) { adminNav.style.display = 'flex'; adminNav.classList.remove('hidden'); }
-            if (adminFab) { adminFab.style.display = 'flex'; }
+            if (adminFab) {
+                adminFab.style.display = 'flex';
+                adminFab.style.alignItems = 'center';
+                adminFab.style.justifyContent = 'center';
+                adminFab.onclick = () => { const m = document.getElementById('add-service-modal'); if(m) m.style.display='flex'; };
+            }
             if (customerServices) customerServices.style.display = 'none';
             if (workerDashboard) workerDashboard.style.display = 'none';
             const lhBtn2 = document.getElementById('home-leave-history-btn');
