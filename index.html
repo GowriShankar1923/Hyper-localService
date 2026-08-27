@@ -578,7 +578,8 @@
                 <div class="services-section">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3>Active Services</h3>
-                        <button id="admin-add-service-btn" style="background: var(--primary-blue); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-plus"></i> Add</button>
+                        <!-- FAB floating button handles adding — this hidden btn kept for JS hook -->
+                        <button id="admin-add-service-btn" style="display:none;"></button>
                     </div>
                     <div class="service-categories-grid" id="admin-service-categories-grid">
                         <!-- JS will populate -->
