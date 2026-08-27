@@ -637,7 +637,7 @@ body {
 .profile-view {
     background-color: #f0f4fb;
     min-height: 100%;
-    /* display: flex is moved to .active state to prevent always showing */
+    /* removed display:flex from base, keeping in .active */
 }
 
 .profile-view.active {
@@ -655,6 +655,7 @@ body {
     gap: 16px;
 }
 
+
 .profile-header {
     background-color: var(--primary-blue); /* Brand Blue */
     color: white;
@@ -662,6 +663,9 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .profile-back-btn {
@@ -947,6 +951,9 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
 }
