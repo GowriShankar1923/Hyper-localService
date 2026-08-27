@@ -1290,8 +1290,10 @@ const logoutBtn = document.getElementById('logout-btn');
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 if ((data.role === 'worker' || data.role === 'both') && data.location) {
-                    const workerLoc = data.location.toLowerCase().trim();
-                    const userLoc = cleanLocation.toLowerCase();
+                    const stripForMatch = (str) => str.toLowerCase().replace(/[aeiou\s[^a-z0-9]]/g, '');
+                    const workerLoc = stripForMatch(data.location);
+                    const userLoc = stripForMatch(cleanLocation);
+                    
                     if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
                         workers.push({ id: data.uid, ...data });
                     }
@@ -1870,7 +1872,9 @@ const logoutBtn = document.getElementById('logout-btn');
                 const dateObj = new Date(booking.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
-                const imgHtml = booking.image ? `<img src="${booking.image}" class="booking-image-thumb" alt="Problem Image">` : '';
+                const imgHtml = isWorker ? 
+                    (booking.image ? `<img src="${booking.image}" class="booking-image-thumb" alt="Problem Image">` : '') : 
+                    `<div style="width: 80px; height: 80px; background-color: #f0f0f0; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: var(--primary-blue); font-size: 32px;"><i class="fa-solid fa-user-tie"></i></div>`;
                 
                 let extraHtml = '';
                 let actionsHtml = '';
