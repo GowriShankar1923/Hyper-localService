@@ -3718,4 +3718,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const blockedLogoutBtn = document.getElementById('blocked-logout-btn');
+    if (blockedLogoutBtn) {
+        blockedLogoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.selectedSessionRole = null;
+                localStorage.removeItem('selectedSessionRole');
+                window.location.reload();
+            } catch (error) {
+                console.error("Logout Error:", error);
+                alert("Error logging out.");
+            }
+        });
+    }
+
 });
