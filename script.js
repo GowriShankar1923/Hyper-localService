@@ -587,8 +587,10 @@ const logoutBtn = document.getElementById('logout-btn');
         } else {
             const normalNav = document.getElementById('normal-bottom-nav');
             const adminNav = document.getElementById('admin-bottom-nav');
+            const adminFab = document.getElementById('admin-fab-btn');
             if (normalNav) normalNav.style.display = 'none';
             if (adminNav) adminNav.style.display = 'none';
+            if (adminFab) adminFab.style.display = 'none';
             
             window.selectedSessionRole = localStorage.getItem('selectedSessionRole'); localStorage.removeItem('selectedSessionRole');
             // User is logged out, ensure Main App is hidden
@@ -991,12 +993,14 @@ const logoutBtn = document.getElementById('logout-btn');
         
         const normalNav = document.getElementById('normal-bottom-nav');
         const adminNav = document.getElementById('admin-bottom-nav');
+        const adminFab = document.getElementById('admin-fab-btn');
         if (role === 'admin') {
             document.querySelectorAll('.app-view').forEach(view => view.classList.remove('active'));
             const adminHome = document.getElementById('view-admin-home');
             if (adminHome) adminHome.classList.add('active');
             if (normalNav) { normalNav.style.display = 'none'; normalNav.classList.add('hidden'); }
             if (adminNav) { adminNav.style.display = 'flex'; adminNav.classList.remove('hidden'); }
+            if (adminFab) { adminFab.style.display = 'flex'; }
             if (customerServices) customerServices.style.display = 'none';
             if (workerDashboard) workerDashboard.style.display = 'none';
             const lhBtn2 = document.getElementById('home-leave-history-btn');
@@ -1005,6 +1009,7 @@ const logoutBtn = document.getElementById('logout-btn');
         } else {
             if (normalNav) { normalNav.style.display = 'flex'; normalNav.classList.remove('hidden'); }
             if (adminNav) { adminNav.style.display = 'none'; adminNav.classList.add('hidden'); }
+            if (adminFab) { adminFab.style.display = 'none'; }
         }
         if (role === 'worker') {
             if (customerServices) customerServices.style.display = 'none';

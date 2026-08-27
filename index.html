@@ -682,6 +682,33 @@
         </nav>
 
     <!-- Admin Bottom Navigation Bar -->
+    <!-- Floating + Button above Admin Nav -->
+    <button id="admin-fab-btn" style="
+        display: none;
+        position: fixed;
+        bottom: 80px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1565C0, #42A5F5);
+        color: white;
+        border: none;
+        font-size: 28px;
+        font-weight: 300;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(21,101,192,0.45);
+        z-index: 999;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    " onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 8px 24px rgba(21,101,192,0.6)'"
+       onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 6px 20px rgba(21,101,192,0.45)'"
+       onclick="document.getElementById('admin-add-service-btn') && document.getElementById('admin-add-service-btn').click()">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
     <nav class="bottom-nav admin-bottom-nav hidden" id="admin-bottom-nav" style="display: none;">
         <div class="nav-item active" data-target="view-admin-home">
             <i class="fa-solid fa-house"></i>
