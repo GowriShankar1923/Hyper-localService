@@ -592,15 +592,27 @@
                     <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 18px; color: var(--primary-blue);">Add New Service</h3>
                     <div class="input-group">
                         <label style="font-size: 13px; color: #555;">Service Name</label>
-                        <input type="text" id="add-svc-name" placeholder="e.g. Plumbing" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px;" required>
+                        <input type="text" id="add-svc-name" placeholder="e.g. Plumbing" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; box-sizing: border-box;" required>
                     </div>
                     <div class="input-group" style="margin-top: 15px;">
                         <label style="font-size: 13px; color: #555;">Emoji Icon</label>
-                        <input type="text" id="add-svc-icon" placeholder="e.g. 🔧" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px;" required>
+                        <input type="text" id="add-svc-icon" placeholder="e.g. 🔧" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; box-sizing: border-box;" required>
                     </div>
                     <div class="input-group" style="margin-top: 15px;">
-                        <label style="font-size: 13px; color: #555;">Image Background URL/Name</label>
-                        <input type="text" id="add-svc-img" placeholder="e.g. service_plumber.jpg" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px;" required>
+                        <label style="font-size: 13px; color: #555;">Service Image</label>
+                        <div style="margin-top: 8px;">
+                            <!-- Hidden real file input -->
+                            <input type="file" id="add-svc-file" accept="image/*" style="display: none;">
+                            <!-- Styled button that triggers file input -->
+                            <button type="button" id="add-svc-choose-img-btn" onclick="document.getElementById('add-svc-file').click()" style="width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 6px; background: #f8f9fa; color: #555; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fa-solid fa-image"></i> Choose Image from Device
+                            </button>
+                            <!-- Preview -->
+                            <div id="add-svc-img-preview" style="margin-top: 8px; display: none; text-align: center;">
+                                <img id="add-svc-img-thumb" src="" alt="preview" style="max-height: 80px; border-radius: 8px; border: 1px solid #eee;">
+                                <div id="add-svc-img-name" style="font-size: 11px; color: #888; margin-top: 4px;"></div>
+                            </div>
+                        </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                         <button id="add-svc-cancel" style="padding: 8px 15px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer; color: #555;">Cancel</button>

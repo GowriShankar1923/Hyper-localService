@@ -3264,145 +3264,185 @@ const DEFAULT_SERVICES = [
     { name: "Home Cleaning", icon: "🧹", image: "service_cleaning.jpg" }
 ];
 
-window.loadAndRenderServices = async function() {
-    try {
-        const servicesRef = collection(db, "services");
-        let snap = await getDocs(servicesRef);
-        
-        if (snap.empty) {
-            console.log("Seeding default services...");
-            for (const svc of DEFAULT_SERVICES) {
-                await addDoc(servicesRef, svc);
-            }
-            snap = await getDocs(servicesRef);
-        }
+// Render all grids from a docs snapshot
+function renderServicesFromDocs(docs) {
+    const customerGrid = document.getElementById('service-categories-grid');
+    const adminGrid    = document.getElementById('admin-service-categories-grid');
+    const workerSelect = document.getElementById('worker-reg-service');
 
-        const customerGrid = document.getElementById('service-categories-grid');
-        const adminGrid = document.getElementById('admin-service-categories-grid');
-        const workerSelect = document.getElementById('worker-reg-service');
+    let customerHtml = '';
+    let adminHtml    = '';
+    let workerHtml   = '<option value="" disabled selected>Select your trade</option>';
 
-        let customerHtml = '';
-        let adminHtml = '';
-        let workerHtml = '<option value="" disabled selected>Select your trade</option>';
+    docs.forEach(docSnap => {
+        const svc = docSnap.data();
+        const id  = docSnap.id;
+        const imgSrc = svc.image && svc.image.startsWith('data:') ? svc.image : svc.image;
 
-        snap.forEach(doc => {
-            const svc = doc.data();
-            const id = doc.id;
-            
-            // Customer HTML
-            customerHtml += `
-                <div class="service-category-tile" data-service="${svc.name}">
-                    <div class="sct-img" style="background-image: url('${svc.image}');"></div>
-                    <div class="sct-label">${svc.icon} ${svc.name}</div>
-                </div>`;
-                
-            // Admin HTML (with delete button)
-            adminHtml += `
-                <div class="service-category-tile" style="position:relative;">
-                    <div class="sct-img" style="background-image: url('${svc.image}');"></div>
-                    <div class="sct-label">${svc.icon} ${svc.name}</div>
-                    <button class="delete-svc-btn" data-id="${id}" style="position:absolute; top:5px; right:5px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:12px; font-weight:bold;">X</button>
-                </div>`;
-                
-            // Worker Select HTML
-            workerHtml += `<option value="${svc.name}">${svc.icon} ${svc.name}</option>`;
+        customerHtml += `
+            <div class="service-category-tile" data-service="${svc.name}">
+                <div class="sct-img" style="background-image: url('${imgSrc}');"></div>
+                <div class="sct-label">${svc.icon} ${svc.name}</div>
+            </div>`;
+
+        adminHtml += `
+            <div class="service-category-tile" style="position:relative;">
+                <div class="sct-img" style="background-image: url('${imgSrc}');"></div>
+                <div class="sct-label">${svc.icon} ${svc.name}</div>
+                <button class="delete-svc-btn" data-id="${id}" style="position:absolute; top:5px; right:5px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:12px; font-weight:bold;">X</button>
+            </div>`;
+
+        workerHtml += `<option value="${svc.name}">${svc.icon} ${svc.name}</option>`;
+    });
+
+    if (customerGrid) {
+        customerGrid.innerHTML = customerHtml;
+        customerGrid.querySelectorAll('.service-category-tile').forEach(tile => {
+            tile.onclick = () => {
+                const service = tile.getAttribute('data-service');
+                const liveLocation = document.getElementById('home-location-display')?.textContent?.trim() || (typeof currentCustomerLocation !== 'undefined' ? currentCustomerLocation : 'Unknown Location');
+                currentCustomerLocation = liveLocation;
+                window.currentCustomerLocation = liveLocation;
+                customerGrid.querySelectorAll('.service-category-tile').forEach(t => t.classList.remove('selected'));
+                tile.classList.add('selected');
+                customerGrid.closest('.services-section').style.display = 'none';
+                const workersSection = document.getElementById('service-workers-section');
+                workersSection.style.display = 'block';
+                document.getElementById('service-workers-title').textContent = service + ' Workers in ' + liveLocation;
+                if (window.fetchWorkersByService) window.fetchWorkersByService(liveLocation, service);
+            };
         });
-
-        if (customerGrid) {
-            customerGrid.innerHTML = customerHtml;
-            // Wire up clicks for customer
-            customerGrid.querySelectorAll('.service-category-tile').forEach(tile => {
-                tile.onclick = () => {
-                    const service = tile.getAttribute('data-service');
-                    // Always read the LIVE location from the display element so location changes are respected
-                    const liveLocation = document.getElementById('home-location-display')?.textContent?.trim() || (typeof currentCustomerLocation !== 'undefined' ? currentCustomerLocation : 'Unknown Location');
-                    currentCustomerLocation = liveLocation;
-                    window.currentCustomerLocation = liveLocation;
-                    
-                    customerGrid.querySelectorAll('.service-category-tile').forEach(t => t.classList.remove('selected'));
-                    tile.classList.add('selected');
-                    customerGrid.closest('.services-section').style.display = 'none';
-                    const workersSection = document.getElementById('service-workers-section');
-                    workersSection.style.display = 'block';
-                    document.getElementById('service-workers-title').textContent = service + ' Workers in ' + liveLocation;
-                    if (window.fetchWorkersByService) {
-                        window.fetchWorkersByService(liveLocation, service);
-                    }
-                };
-            });
-        }
-        
-        if (adminGrid) {
-            adminGrid.innerHTML = adminHtml;
-            adminGrid.querySelectorAll('.delete-svc-btn').forEach(btn => {
-                btn.onclick = async (e) => {
-                    e.stopPropagation();
-                    if(confirm("Are you sure you want to delete this service?")) {
-                        const id = btn.getAttribute('data-id');
-                        await deleteDoc(doc(db, "services", id));
-                        window.loadAndRenderServices();
-                    }
-                };
-            });
-        }
-        
-        if (workerSelect) {
-            workerSelect.innerHTML = workerHtml;
-        }
-
-    } catch (error) {
-        console.error("Error loading services: ", error);
     }
+
+    if (adminGrid) {
+        adminGrid.innerHTML = adminHtml;
+        adminGrid.querySelectorAll('.delete-svc-btn').forEach(btn => {
+            btn.onclick = async (e) => {
+                e.stopPropagation();
+                if (confirm('Are you sure you want to delete this service?')) {
+                    const id = btn.getAttribute('data-id');
+                    await deleteDoc(doc(db, 'services', id));
+                    // Real-time listener will auto-refresh all grids
+                }
+            };
+        });
+    }
+
+    if (workerSelect) workerSelect.innerHTML = workerHtml;
+}
+
+// Real-time listener — auto-updates customer, worker & admin grids on any add/delete
+let _servicesUnsubscribe = null;
+window.loadAndRenderServices = async function() {
+    const servicesRef = collection(db, 'services');
+
+    // Seed defaults if empty
+    try {
+        const snap = await getDocs(servicesRef);
+        if (snap.empty) {
+            console.log('Seeding default services...');
+            for (const svc of DEFAULT_SERVICES) await addDoc(servicesRef, svc);
+        }
+    } catch (e) { console.error('Seed error', e); }
+
+    // Unsubscribe previous listener if any
+    if (_servicesUnsubscribe) _servicesUnsubscribe();
+
+    // Subscribe to real-time updates
+    _servicesUnsubscribe = onSnapshot(servicesRef, (snapshot) => {
+        renderServicesFromDocs(snapshot.docs);
+    }, (error) => {
+        console.error('Services listener error:', error);
+    });
 };
 
 // Hook into load
 setTimeout(() => {
-    if (window.loadAndRenderServices) {
-        window.loadAndRenderServices();
-    }
-}, 1000); // Give Firebase time to init
+    if (window.loadAndRenderServices) window.loadAndRenderServices();
+}, 1000);
 
-// Admin Add Service Logic
-document.addEventListener("DOMContentLoaded", () => {
+// Admin Add Service Logic — now with image file picker
+document.addEventListener('DOMContentLoaded', () => {
     const addSvcBtn = document.getElementById('admin-add-service-btn');
-    const modal = document.getElementById('add-service-modal');
+    const fabBtn    = document.getElementById('admin-fab-btn');
+    const modal     = document.getElementById('add-service-modal');
     const cancelBtn = document.getElementById('add-svc-cancel');
-    const saveBtn = document.getElementById('add-svc-save');
+    const saveBtn   = document.getElementById('add-svc-save');
+    const fileInput = document.getElementById('add-svc-file');
 
-    if (addSvcBtn && modal) {
-        addSvcBtn.addEventListener('click', () => modal.style.display = 'flex');
-        cancelBtn.addEventListener('click', () => modal.style.display = 'none');
-        
+    // Store selected image base64
+    let selectedImageBase64 = '';
+
+    // File picker change handler — show preview
+    if (fileInput) {
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedImageBase64 = e.target.result; // base64 data URL
+                const thumb   = document.getElementById('add-svc-img-thumb');
+                const preview = document.getElementById('add-svc-img-preview');
+                const nameEl  = document.getElementById('add-svc-img-name');
+                const chooseBtn = document.getElementById('add-svc-choose-img-btn');
+                if (thumb)   thumb.src = selectedImageBase64;
+                if (preview) preview.style.display = 'block';
+                if (nameEl)  nameEl.textContent = file.name;
+                if (chooseBtn) chooseBtn.innerHTML = '<i class="fa-solid fa-check" style="color:green"></i> Image selected';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function openModal() {
+        // Reset modal
+        selectedImageBase64 = '';
+        if (document.getElementById('add-svc-name'))  document.getElementById('add-svc-name').value = '';
+        if (document.getElementById('add-svc-icon'))  document.getElementById('add-svc-icon').value = '';
+        if (fileInput) fileInput.value = '';
+        const preview   = document.getElementById('add-svc-img-preview');
+        const chooseBtn = document.getElementById('add-svc-choose-img-btn');
+        if (preview)   preview.style.display = 'none';
+        if (chooseBtn) chooseBtn.innerHTML = '<i class="fa-solid fa-image"></i> Choose Image from Device';
+        if (modal) modal.style.display = 'flex';
+    }
+
+    if (addSvcBtn && modal) addSvcBtn.addEventListener('click', openModal);
+    if (fabBtn    && modal) fabBtn.addEventListener('click', openModal);
+    if (cancelBtn)          cancelBtn.addEventListener('click', () => { if (modal) modal.style.display = 'none'; });
+
+    if (saveBtn) {
         saveBtn.addEventListener('click', async () => {
-            const name = document.getElementById('add-svc-name').value;
-            const icon = document.getElementById('add-svc-icon').value;
-            const image = document.getElementById('add-svc-img').value;
-            
-            if (!name || !icon || !image) {
-                alert("Please fill all fields");
+            const name = (document.getElementById('add-svc-name')?.value || '').trim();
+            const icon = (document.getElementById('add-svc-icon')?.value || '').trim();
+
+            if (!name || !icon) {
+                alert('Please fill Service Name and Emoji Icon');
                 return;
             }
-            
+            if (!selectedImageBase64) {
+                alert('Please choose a service image');
+                return;
+            }
+
             saveBtn.disabled = true;
             saveBtn.textContent = 'Saving...';
-            
+
             try {
-                await addDoc(collection(db, "services"), { name, icon, image });
-                modal.style.display = 'none';
-                document.getElementById('add-svc-name').value = '';
-                document.getElementById('add-svc-icon').value = '';
-                document.getElementById('add-svc-img').value = '';
-                window.loadAndRenderServices();
+                await addDoc(collection(db, 'services'), { name, icon, image: selectedImageBase64 });
+                // Real-time listener auto-refreshes all grids instantly
+                if (modal) modal.style.display = 'none';
             } catch (error) {
                 console.error(error);
-                alert("Error saving service");
+                alert('Error saving service: ' + error.message);
             }
-            
+
             saveBtn.disabled = false;
             saveBtn.textContent = 'Save Service';
         });
     }
 });
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
