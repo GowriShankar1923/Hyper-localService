@@ -1829,8 +1829,12 @@ const logoutBtn = document.getElementById('logout-btn');
                 return;
             }
             
-            // Sort client-side by timestamp descending
-            bookings.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+            // Sort client-side by timestamp descending (safe fallback if timestamp missing)
+            bookings.sort((a, b) => {
+                const ta = a.timestamp ? a.timestamp.toMillis() : 0;
+                const tb = b.timestamp ? b.timestamp.toMillis() : 0;
+                return tb - ta;
+            });
             
             bookingsList.innerHTML = '';
             
@@ -1949,8 +1953,8 @@ const logoutBtn = document.getElementById('logout-btn');
                     <div class="booking-details" style="margin-top: 15px;">
                         <div class="booking-info">
                             <div><i class="fa-solid fa-calendar-days"></i> ${formattedDate}</div>
-                            <div><i class="fa-solid fa-location-dot"></i> ${booking.address.substring(0, 30)}${booking.address.length > 30 ? '...' : ''}</div>
-                            <div style="margin-top: 5px; color: #333;"><strong>Desc:</strong> ${booking.description.substring(0, 50)}${booking.description.length > 50 ? '...' : ''}</div>
+                            <div><i class="fa-solid fa-location-dot"></i> ${(booking.address || 'No address').substring(0, 30)}${(booking.address || '').length > 30 ? '...' : ''}</div>
+                            <div style="margin-top: 5px; color: #333;"><strong>Desc:</strong> ${(booking.description || 'No description').substring(0, 50)}${(booking.description || '').length > 50 ? '...' : ''}</div>
                         </div>
                         ${imgHtml}
                     </div>
