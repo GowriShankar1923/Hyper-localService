@@ -1530,10 +1530,10 @@ const logoutBtn = document.getElementById('logout-btn');
                 } else if (booking.status === 'PaymentPending') {
                     actionHtml = `<div class="dropdown-item force-complete-btn" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: var(--accent-green); font-weight: bold;"> Mark Completed (Release)</div>`;
                 }
-                const threeDotsMenu = actionHtml ? `
-                    <div class="booking-menu" style="position: absolute; right: 15px; top: 15px; display: inline-block;">
-                        <i class="fa-solid fa-ellipsis-vertical toggle-menu" style="cursor: pointer; padding: 5px; color: #888; font-size: 18px;"></i>
-                        <div class="menu-dropdown" style="position: absolute; right: 0; top: 100%; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; width: 220px; padding: 5px 0; display: none;">
+                const threeDotsInHeader = actionHtml ? `
+                    <div class="booking-menu" style="position: relative; display: inline-block; margin-left: 8px;">
+                        <i class="fa-solid fa-ellipsis-vertical toggle-menu" style="cursor: pointer; padding: 5px 8px; color: #888; font-size: 18px; vertical-align: middle;"></i>
+                        <div class="menu-dropdown" style="position: absolute; right: 0; top: 110%; background: white; box-shadow: 0 4px 16px rgba(0,0,0,0.18); border-radius: 10px; z-index: 999; min-width: 180px; padding: 6px 0; display: none; border: 1px solid #eee;">
                             ${actionHtml}
                         </div>
                     </div>
@@ -1557,9 +1557,12 @@ const logoutBtn = document.getElementById('logout-btn');
                 const imgHtml = booking.image ? `<img src="${booking.image}" class="booking-image-thumb" alt="Problem Image">` : '';
 
                 card.innerHTML = `
-                    <div class="booking-header">
+                    <div class="booking-header" style="display: flex; align-items: center; justify-content: space-between;">
                         <span class="booking-service">${booking.service}</span>
-                        <span class="booking-status status-${booking.status.toLowerCase()}">${booking.status}</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="booking-status status-${booking.status.toLowerCase()}">${booking.status}</span>
+                            ${threeDotsInHeader}
+                        </div>
                     </div>
                     <div class="booking-details">
                         <div style="flex: 1;">
@@ -1571,7 +1574,6 @@ const logoutBtn = document.getElementById('logout-btn');
                         ${imgHtml}
                     </div>
                     ${extraWorkerHtml}
-                    ${threeDotsMenu}
                 `;
                 jobsList.appendChild(card);
             });
@@ -1583,16 +1585,21 @@ const logoutBtn = document.getElementById('logout-btn');
             // 3-dots menu logic
             document.querySelectorAll(`#${containerId} .toggle-menu`).forEach(btn => {
                 btn.onclick = (e) => {
-                    const menuContainer = e.target.closest('.booking-menu');
-                    if (!menuContainer) return;
-                    const dropdown = menuContainer.querySelector('.menu-dropdown');
+                    e.stopPropagation();
+                    // Find the dropdown inside the same .booking-menu container
+                    const menu = e.currentTarget.closest('.booking-menu');
+                    const dropdown = menu ? menu.querySelector('.menu-dropdown') : null;
                     if (!dropdown) return;
                     const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
-                    // Close all other dropdowns
+                    // Close all other dropdowns first
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
                     if (isHidden) dropdown.style.display = 'block';
                 };
             });
+            // Close dropdowns when clicking anywhere outside
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
+            }, { once: false, capture: false });
 
             // Attach action listeners
             document.querySelectorAll(`#${containerId} .inline-verify-btn-worker`).forEach(btn => {
@@ -1950,10 +1957,7 @@ const logoutBtn = document.getElementById('logout-btn');
             // 3-dots menu logic
             document.querySelectorAll('.toggle-menu').forEach(btn => {
                 btn.onclick = (e) => {
-                    const menuContainer = e.target.closest('.booking-menu');
-                    if (!menuContainer) return;
-                    const dropdown = menuContainer.querySelector('.menu-dropdown');
-                    if (!dropdown) return;
+                    const dropdown = e.target.nextElementSibling;
                     const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
                     // Close all other dropdowns
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
