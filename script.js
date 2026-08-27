@@ -1035,6 +1035,7 @@ const logoutBtn = document.getElementById('logout-btn');
             if (customerServices) customerServices.style.display = 'none';
             if (workerDashboard) workerDashboard.style.display = 'none';
             const lhBtn2 = document.getElementById('home-leave-history-btn');
+            if (lhBtn2) lhBtn2.style.display = 'none';
             if (typeof fetchAdminDashboard !== "undefined") { fetchAdminDashboard(); } else if (window.fetchAdminDashboard) { window.fetchAdminDashboard(); }
             return;
         } else {
@@ -1046,7 +1047,7 @@ const logoutBtn = document.getElementById('logout-btn');
             if (customerServices) customerServices.style.display = 'none';
             if (workerDashboard) workerDashboard.style.display = 'block';
             const lhBtn = document.getElementById('home-leave-history-btn');
-            if (lhBtn) lhBtn.style.display = 'flex';
+            if (lhBtn) lhBtn.style.display = 'block';
             if (releaseBtn) releaseBtn.style.display = 'flex';
             if (auth.currentUser) {
                 fetchAndPopulateWorkerLeave(auth.currentUser.uid);
@@ -3063,7 +3064,7 @@ document.addEventListener('click', async (e) => {
     }
 
     // Leave History btn
-    if (e.target.closest('#worker-leave-history-btn')) {
+    if (e.target.closest('#worker-leave-history-btn') || e.target.closest('#home-leave-history-btn')) {
         const modal = document.getElementById('leave-history-modal');
         if (modal) {
             modal.style.display = 'flex';
