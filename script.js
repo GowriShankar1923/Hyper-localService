@@ -1217,8 +1217,8 @@ const logoutBtn = document.getElementById('logout-btn');
                     : `<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.45); color:white; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px;">New</div>`;
                 
                 const reviewLink = ratingCount > 0
-                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')">${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
-                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px;">No reviews yet</div>`;
+                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:3px;"></i>${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
+                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')" ><i class="fa-regular fa-star" style="color:#ccc; margin-right:3px;"></i>No reviews yet &rsaquo;</div>`;
 
                 card.innerHTML = `
                     <div class="service-image" style="background-image: url('${bgImage}'); position: relative;">
@@ -1334,8 +1334,8 @@ const logoutBtn = document.getElementById('logout-btn');
                 }
 
                 const reviewLink2 = ratingCount > 0
-                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')">${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
-                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px;">No reviews yet</div>`;
+                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:3px;"></i>${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
+                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')" ><i class="fa-regular fa-star" style="color:#ccc; margin-right:3px;"></i>No reviews yet &rsaquo;</div>`;
 
                 card.innerHTML = `
                     ${mainImageWithBadge}
