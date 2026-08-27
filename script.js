@@ -388,6 +388,16 @@ const logoutBtn = document.getElementById('logout-btn');
                 fetchAdminWorkers();
             }
 
+            // Show FAB only on Admin Home tab if logged in as Admin
+            const adminFab = document.getElementById('admin-fab-btn');
+            if (adminFab && (window.selectedSessionRole || localStorage.getItem('selectedSessionRole')) === 'admin') {
+                if (targetId === 'view-admin-home') {
+                    adminFab.style.display = 'flex';
+                } else {
+                    adminFab.style.display = 'none';
+                }
+            }
+
             // Refresh profile data every time profile tab is clicked
             if (targetId === 'view-profile' && auth.currentUser) {
                 if ((window.selectedSessionRole || localStorage.getItem('selectedSessionRole')) === 'admin') {
