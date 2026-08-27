@@ -1389,8 +1389,10 @@ const logoutBtn = document.getElementById('logout-btn');
                     
                     if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
                         // Deduplicate by UID or exact Name in case of multiple test profile documents
-                        if (!workers.find(w => w.id === data.uid || (w.name && w.name === data.name))) {
-                            workers.push({ id: data.uid, ...data });
+                        if (!workers.find(w => w.uid === data.uid || (w.name && w.name === data.name))) {
+                            // Store BOTH doc.id (Firestore document ID) and uid (auth UID)
+                            // doc.id is used for direct document updates, uid for authentication
+                            workers.push({ id: doc.id, uid: data.uid, ...data });
                         }
                     }
                 }
@@ -3951,36 +3953,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: new Date().toISOString()
             };
 
-            // Find the actual Firestore document for this worker by querying uid field
+            // Find the actual Firestore document for this worker
+            // currentRatingWorkerId may be a doc.id OR a uid (auth UID)
             let workerRef = null;
             
-            // First try: query customers collection by uid
-            const workerQuery = query(collection(db, 'customers'), where('uid', '==', currentRatingWorkerId));
-            const workerSnap = await getDocs(workerQuery);
+            // Try 1: direct doc.id lookup in customers (works when workerId = doc.id)
+            const directCustomerRef = doc(db, 'customers', currentRatingWorkerId);
+            const directCustomerSnap = await getDoc(directCustomerRef);
+            if (directCustomerSnap.exists()) {
+                workerRef = directCustomerRef;
+                console.log('Rating: found worker by doc.id in customers');
+            }
             
-            if (!workerSnap.empty) {
-                workerRef = workerSnap.docs[0].ref;
-            } else {
-                // Second try: query workers collection by uid
+            // Try 2: query customers by uid field (works when workerId = auth uid)
+            if (!workerRef) {
+                const workerQuery = query(collection(db, 'customers'), where('uid', '==', currentRatingWorkerId));
+                const workerSnap = await getDocs(workerQuery);
+                if (!workerSnap.empty) {
+                    workerRef = workerSnap.docs[0].ref;
+                    console.log('Rating: found worker by uid query in customers');
+                }
+            }
+            
+            // Try 3: direct doc.id lookup in workers collection
+            if (!workerRef) {
+                const directWorkerRef = doc(db, 'workers', currentRatingWorkerId);
+                const directWorkerSnap = await getDoc(directWorkerRef);
+                if (directWorkerSnap.exists()) {
+                    workerRef = directWorkerRef;
+                    console.log('Rating: found worker by doc.id in workers');
+                }
+            }
+            
+            // Try 4: query workers collection by uid
+            if (!workerRef) {
                 const workerQuery2 = query(collection(db, 'workers'), where('uid', '==', currentRatingWorkerId));
                 const workerSnap2 = await getDocs(workerQuery2);
                 if (!workerSnap2.empty) {
                     workerRef = workerSnap2.docs[0].ref;
-                } else {
-                    // Last fallback: treat uid as document ID
-                    const directRef = doc(db, 'customers', currentRatingWorkerId);
-                    const directSnap = await getDoc(directRef);
-                    if (directSnap.exists()) {
-                        workerRef = directRef;
-                    }
+                    console.log('Rating: found worker by uid query in workers');
                 }
             }
             
-            if (workerRef) {
-                await updateDoc(workerRef, {
-                    ratings: arrayUnion(ratingData)
-                });
+            if (!workerRef) {
+                console.error('Rating: Could not find worker document. workerId:', currentRatingWorkerId);
+                throw new Error('Worker not found. Please try again.');
             }
+            
+            await updateDoc(workerRef, {
+                ratings: arrayUnion(ratingData)
+            });
+            console.log('Rating saved successfully to:', workerRef.path);
 
             const bookingRef = doc(db, 'bookings', currentRatingBookingId);
             await updateDoc(bookingRef, {
