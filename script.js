@@ -1161,7 +1161,7 @@ const logoutBtn = document.getElementById('logout-btn');
                         const workerLoc = data.location.toLowerCase().trim();
                         const userLoc = location.toLowerCase().trim();
                         if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
-                            workers.push({ id: doc.id, ...data });
+                            workers.push({ id: data.uid || doc.id, ...data });
                         }
                     }
                 }
@@ -3951,26 +3951,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: new Date().toISOString()
             };
 
-            let workerRef = doc(db, 'customers', currentRatingWorkerId);
-            let workerDocSnap = await getDoc(workerRef);
-            if (!workerDocSnap.exists()) {
-                workerRef = doc(db, 'workers', currentRatingWorkerId);
-                workerDocSnap = await getDoc(workerRef);
+            // Find the actual Firestore document for this worker by querying uid field
+            let workerRef = null;
+            
+            // First try: query customers collection by uid
+            const workerQuery = query(collection(db, 'customers'), where('uid', '==', currentRatingWorkerId));
+            const workerSnap = await getDocs(workerQuery);
+            
+            if (!workerSnap.empty) {
+                workerRef = workerSnap.docs[0].ref;
+            } else {
+                // Second try: query workers collection by uid
+                const workerQuery2 = query(collection(db, 'workers'), where('uid', '==', currentRatingWorkerId));
+                const workerSnap2 = await getDocs(workerQuery2);
+                if (!workerSnap2.empty) {
+                    workerRef = workerSnap2.docs[0].ref;
+                } else {
+                    // Last fallback: treat uid as document ID
+                    const directRef = doc(db, 'customers', currentRatingWorkerId);
+                    const directSnap = await getDoc(directRef);
+                    if (directSnap.exists()) {
+                        workerRef = directRef;
+                    }
+                }
             }
             
-            if (workerDocSnap.exists()) {
+            if (workerRef) {
                 await updateDoc(workerRef, {
                     ratings: arrayUnion(ratingData)
-                });
-            } else {
-                console.warn('Worker document not found, creating in customers collection to save rating.');
-                await updateDoc(doc(db, 'customers', currentRatingWorkerId), {
-                    ratings: arrayUnion(ratingData)
-                }).catch(async () => {
-                    // Fallback if document really doesn't exist
-                    await setDoc(doc(db, 'customers', currentRatingWorkerId), {
-                        ratings: arrayUnion(ratingData)
-                    }, { merge: true });
                 });
             }
 
@@ -4002,13 +4010,30 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'flex';
 
         try {
-            let workerDoc = await getDoc(doc(db, 'customers', workerId));
-            if (!workerDoc.exists()) {
-                workerDoc = await getDoc(doc(db, 'workers', workerId));
+            let ratingsData = null;
+
+            // Query by uid field (not document ID) to handle auto-ID documents
+            const qCustomer = query(collection(db, 'customers'), where('uid', '==', workerId));
+            const snapCustomer = await getDocs(qCustomer);
+            if (!snapCustomer.empty) {
+                ratingsData = snapCustomer.docs[0].data();
+            } else {
+                const qWorker = query(collection(db, 'workers'), where('uid', '==', workerId));
+                const snapWorker = await getDocs(qWorker);
+                if (!snapWorker.empty) {
+                    ratingsData = snapWorker.docs[0].data();
+                } else {
+                    // Fallback: direct doc ID lookup
+                    let workerDoc = await getDoc(doc(db, 'customers', workerId));
+                    if (!workerDoc.exists()) {
+                        workerDoc = await getDoc(doc(db, 'workers', workerId));
+                    }
+                    if (workerDoc.exists()) ratingsData = workerDoc.data();
+                }
             }
-            
-            if (workerDoc.exists()) {
-                const data = workerDoc.data();
+
+            if (ratingsData) {
+                const data = ratingsData;
                 const ratings = data.ratings || [];
                 
                 if (ratings.length === 0) {
