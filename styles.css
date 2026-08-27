@@ -581,6 +581,34 @@ body {
     z-index: 1000;
 }
 
+/* Floating + Action Button above My Profile nav slot */
+#admin-fab-btn {
+    position: fixed !important;
+    bottom: 80px !important;          /* 70px nav + 10px gap */
+    right: calc(10% - 28px) !important; /* center of 5th slot (rightmost 20% strip) */
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #1565C0, #42A5F5) !important;
+    color: white !important;
+    border: none !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 18px rgba(21,101,192,0.55) !important;
+    z-index: 9999 !important;
+    display: none;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+#admin-fab-btn:hover {
+    transform: scale(1.12) !important;
+    box-shadow: 0 8px 24px rgba(21,101,192,0.65) !important;
+}
+#admin-fab-btn:active {
+    transform: scale(0.95) !important;
+}
+
 .nav-item {
     display: flex;
     flex-direction: column;
