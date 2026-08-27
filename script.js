@@ -1582,24 +1582,27 @@ const logoutBtn = document.getElementById('logout-btn');
                 jobsList.innerHTML = '<div class="empty-state">No active jobs found.</div>';
             }
 
-            // 3-dots menu logic
+            // 3-dots menu logic - use addEventListener so stopPropagation works correctly
             document.querySelectorAll(`#${containerId} .toggle-menu`).forEach(btn => {
-                btn.onclick = (e) => {
+                btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Find the dropdown inside the same .booking-menu container
-                    const menu = e.currentTarget.closest('.booking-menu');
+                    const menu = btn.closest('.booking-menu');
                     const dropdown = menu ? menu.querySelector('.menu-dropdown') : null;
                     if (!dropdown) return;
-                    const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
+                    const isOpen = dropdown.style.display === 'block';
                     // Close all other dropdowns first
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
-                    if (isHidden) dropdown.style.display = 'block';
-                };
+                    // Toggle this one
+                    dropdown.style.display = isOpen ? 'none' : 'block';
+                });
             });
-            // Close dropdowns when clicking anywhere outside
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
-            }, { once: false, capture: false });
+            // Register global close listener only once
+            if (!window._menuCloseListenerAdded) {
+                window._menuCloseListenerAdded = true;
+                document.addEventListener('click', () => {
+                    document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
+                });
+            }
 
             // Attach action listeners
             document.querySelectorAll(`#${containerId} .inline-verify-btn-worker`).forEach(btn => {
