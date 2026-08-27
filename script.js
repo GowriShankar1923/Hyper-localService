@@ -230,13 +230,7 @@ const logoutBtn = document.getElementById('logout-btn');
 
             if (!emailSnap.empty) {
                 const userData = emailSnap.docs[0].data();
-                if (userData.status === 'blocked') {
-                    alert('Your account has been blocked by the admin.');
-                    btn.innerHTML = originalText;
-                    btn.style.opacity = '1';
-                    btn.disabled = false;
-                    return;
-                }
+
                 const actualRole = userData.role;
                 
                 // Show role popup on the login page BEFORE logging in for EVERYONE
