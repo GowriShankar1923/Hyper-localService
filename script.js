@@ -422,10 +422,20 @@ const logoutBtn = document.getElementById('logout-btn');
                     if (regWorkerBtn) regWorkerBtn.style.display = 'none';
                     
                     // Default avatar
-                    document.getElementById('profile-avatar-img').src = 'https://via.placeholder.com/150?text=Admin';
                     document.getElementById('profile-avatar-img').style.display = 'block';
                     document.getElementById('profile-avatar-icon-default').style.display = 'none';
-                    document.getElementById('avatar-edit-btn').style.display = 'none'; // hide edit btn for admin
+                    document.getElementById('avatar-edit-btn').style.display = 'flex';
+                    
+                    try {
+                        const adminProfileDoc = await getDoc(doc(db, "config", "adminProfile"));
+                        if (adminProfileDoc.exists() && adminProfileDoc.data().profileImage) {
+                            document.getElementById('profile-avatar-img').src = adminProfileDoc.data().profileImage;
+                        } else {
+                            document.getElementById('profile-avatar-img').src = 'https://via.placeholder.com/150?text=Admin';
+                        }
+                    } catch(e) {
+                        document.getElementById('profile-avatar-img').src = 'https://via.placeholder.com/150?text=Admin';
+                    }
                 } else {
                     document.getElementById('avatar-edit-btn').style.display = 'flex'; // show for workers/customers
                     fetchAndPopulateProfile(auth.currentUser);
@@ -2195,6 +2205,15 @@ const logoutBtn = document.getElementById('logout-btn');
         btnAvatarRemove.onclick = async () => {
             avatarActionModal.classList.add('hidden');
             setTimeout(() => avatarActionModal.style.display = 'none', 300);
+            
+            const currentRole = window.selectedSessionRole || localStorage.getItem('selectedSessionRole');
+            if (currentRole === 'admin') {
+                await setDoc(doc(db, "config", "adminProfile"), { profileImage: null }, { merge: true });
+                // Refresh admin profile image
+                document.getElementById('profile-avatar-img').src = 'https://via.placeholder.com/150?text=Admin';
+                return;
+            }
+            
             if (auth.currentUser) {
                 const q = query(collection(db, "customers"), where("uid", "==", auth.currentUser.uid));
                 const snap = await getDocs(q);
@@ -2284,19 +2303,36 @@ const logoutBtn = document.getElementById('logout-btn');
     
     if (btnSaveCrop) {
         btnSaveCrop.onclick = async () => {
-            if (!cropperInstance || !auth.currentUser) return;
+            if (!cropperInstance) return;
             const canvas = cropperInstance.getCroppedCanvas({
                 width: 400,
                 height: 400
             });
             const base64Img = canvas.toDataURL('image/jpeg', 0.8);
             
+            const btnOriginalText = btnSaveCrop.textContent;
+            btnSaveCrop.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+            
+            const currentRole = window.selectedSessionRole || localStorage.getItem('selectedSessionRole');
+            if (currentRole === 'admin') {
+                await setDoc(doc(db, "config", "adminProfile"), { profileImage: base64Img }, { merge: true });
+                document.getElementById('profile-avatar-img').src = base64Img;
+                
+                btnSaveCrop.textContent = btnOriginalText;
+                if (cropperInstance) cropperInstance.destroy();
+                cropperInstance = null;
+                cropperModal.classList.add('hidden');
+                setTimeout(() => cropperModal.style.display = 'none', 300);
+                if(profileImageInput) profileImageInput.value = "";
+                return;
+            }
+            
+            if (!auth.currentUser) return;
+            
             // Save to Firestore
             const q = query(collection(db, "customers"), where("uid", "==", auth.currentUser.uid));
             const snap = await getDocs(q);
             if (!snap.empty) {
-                const btnOriginalText = btnSaveCrop.textContent;
-                btnSaveCrop.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
                 await updateDoc(snap.docs[0].ref, { profileImage: base64Img });
                 btnSaveCrop.textContent = btnOriginalText;
                 
@@ -2305,7 +2341,7 @@ const logoutBtn = document.getElementById('logout-btn');
                 cropperInstance = null;
                 cropperModal.classList.add('hidden');
                 setTimeout(() => cropperModal.style.display = 'none', 300);
-                profileImageInput.value = "";
+                if(profileImageInput) profileImageInput.value = "";
                 
                 // Refresh Profile
                 fetchAndPopulateProfile(auth.currentUser);
