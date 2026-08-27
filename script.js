@@ -370,7 +370,7 @@ const logoutBtn = document.getElementById('logout-btn');
 
     // Handle Bottom Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
             document.querySelectorAll('.app-view').forEach(view => view.classList.remove('active'));
