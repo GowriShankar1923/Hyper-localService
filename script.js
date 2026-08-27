@@ -1308,7 +1308,10 @@ const logoutBtn = document.getElementById('logout-btn');
                     const userLoc = stripForMatch(cleanLocation);
                     
                     if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
-                        workers.push({ id: data.uid, ...data });
+                        // Deduplicate by UID in case of multiple profile documents
+                        if (!workers.find(w => w.id === data.uid)) {
+                            workers.push({ id: data.uid, ...data });
+                        }
                     }
                 }
             });
