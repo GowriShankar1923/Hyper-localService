@@ -3875,10 +3875,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: new Date().toISOString()
             };
 
-            const workerRef = doc(db, 'customers', currentRatingWorkerId);
-            await updateDoc(workerRef, {
-                ratings: arrayUnion(ratingData)
-            });
+            let workerRef = doc(db, 'customers', currentRatingWorkerId);
+            let workerDocSnap = await getDoc(workerRef);
+            if (!workerDocSnap.exists()) {
+                workerRef = doc(db, 'workers', currentRatingWorkerId);
+                workerDocSnap = await getDoc(workerRef);
+            }
+            
+            if (workerDocSnap.exists()) {
+                await updateDoc(workerRef, {
+                    ratings: arrayUnion(ratingData)
+                });
+            } else {
+                console.warn('Worker document not found, creating in customers collection to save rating.');
+                await updateDoc(doc(db, 'customers', currentRatingWorkerId), {
+                    ratings: arrayUnion(ratingData)
+                }).catch(async () => {
+                    // Fallback if document really doesn't exist
+                    await setDoc(doc(db, 'customers', currentRatingWorkerId), {
+                        ratings: arrayUnion(ratingData)
+                    }, { merge: true });
+                });
+            }
 
             const bookingRef = doc(db, 'bookings', currentRatingBookingId);
             await updateDoc(bookingRef, {
@@ -3908,7 +3926,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'flex';
 
         try {
-            const workerDoc = await getDoc(doc(db, 'customers', workerId));
+            let workerDoc = await getDoc(doc(db, 'customers', workerId));
+            if (!workerDoc.exists()) {
+                workerDoc = await getDoc(doc(db, 'workers', workerId));
+            }
+            
             if (workerDoc.exists()) {
                 const data = workerDoc.data();
                 const ratings = data.ratings || [];
