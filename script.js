@@ -3680,4 +3680,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const blockedChatBtn = document.getElementById('blocked-chat-btn');
+    if (blockedChatBtn) {
+        blockedChatBtn.addEventListener('click', async () => {
+            const modal = document.getElementById('inbox-modal');
+            if (modal && auth.currentUser) {
+                const myUid = auth.currentUser.uid;
+                const chatsRef = collection(db, 'chats');
+                const q = query(chatsRef, where('participants', 'array-contains', myUid));
+                
+                try {
+                    const snap = await getDocs(q);
+                    let adminUid = null;
+                    let adminName = 'Admin';
+                    
+                    snap.forEach(docSnap => {
+                        const data = docSnap.data();
+                        if (data.names) {
+                            const otherUid = data.participants.find(u => u !== myUid);
+                            if (data.names[otherUid] === 'Admin') {
+                                adminUid = otherUid;
+                                adminName = data.names[otherUid];
+                            }
+                        }
+                    });
+                    
+                    if (adminUid) {
+                        window.openChatModal(adminUid, adminName);
+                    } else {
+                        window.openInboxModal();
+                    }
+                } catch (e) {
+                    console.error("Error finding admin chat:", e);
+                    window.openInboxModal();
+                }
+            }
+        });
+    }
+
 });
