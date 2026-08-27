@@ -2613,91 +2613,126 @@ window.fetchAdminOrders = () => {
     if (unsubOrders) unsubOrders();
 
     const statusColors = {
-        'Pending':        { bg: '#FFF3E0', text: '#E65100', badge: '#FF9800' },
-        'Accepted':       { bg: '#E3F2FD', text: '#0D47A1', badge: '#1565C0' },
-        'Reached':        { bg: '#EDE7F6', text: '#4527A0', badge: '#7B1FA2' },
-        'PaymentPending': { bg: '#FFF8E1', text: '#F57F17', badge: '#FBC02D' },
-        'Completed':      { bg: '#E8F5E9', text: '#1B5E20', badge: '#43A047' },
-        'Canceled':       { bg: '#FFEBEE', text: '#B71C1C', badge: '#E53935' },
+        'Pending':        { bg: '#FFF3E0', badge: '#FF9800' },
+        'Accepted':       { bg: '#E3F2FD', badge: '#1565C0' },
+        'Reached':        { bg: '#EDE7F6', badge: '#7B1FA2' },
+        'PaymentPending': { bg: '#FFF8E1', badge: '#FBC02D' },
+        'Completed':      { bg: '#E8F5E9', badge: '#43A047' },
+        'Canceled':       { bg: '#FFEBEE', badge: '#E53935' },
     };
 
-    try {
-        unsubOrders = onSnapshot(
-            collection(db, 'bookings'),
-            async (bookingsSnap) => {
-                list.innerHTML = '';
+    // Cache for name lookups to avoid redundant Firestore reads
+    const nameCache = {};
 
-                if (bookingsSnap.empty) {
-                    list.innerHTML = '<div style="text-align:center; padding: 30px; color:#888;">No orders found.</div>';
-                    return;
-                }
-
-                // Sort by timestamp descending (newest first)
-                const docs = [];
-                bookingsSnap.forEach(d => docs.push({ id: d.id, ...d.data() }));
-                docs.sort((a, b) => {
-                    const ta = a.timestamp ? a.timestamp.toMillis() : 0;
-                    const tb = b.timestamp ? b.timestamp.toMillis() : 0;
-                    return tb - ta;
-                });
-
-                let orderNum = docs.length;
-                for (const data of docs) {
-                    const sc = statusColors[data.status] || { bg: '#f5f5f5', text: '#333', badge: '#999' };
-
-                    // Format date
-                    let dateStr = '—';
-                    try { dateStr = new Date(data.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) {}
-
-                    // Format timestamp
-                    let timeStr = '—';
-                    try {
-                        if (data.timestamp) {
-                            timeStr = data.timestamp.toDate().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                        }
-                    } catch(e) {}
-
-                    const timeSlot   = data.timeSlot   || data.time   || '—';
-                    const address    = (data.address   || '—').substring(0, 40);
-                    const desc       = (data.description || '—').substring(0, 60);
-                    const custName   = data.customerName || data.userName || ('User …' + (data.userId || '').substring(0,5));
-                    const workerName = data.workerName || (data.workerId ? 'Worker …' + data.workerId.substring(0,5) : 'Not assigned');
-                    const service    = data.service || '—';
-                    const amount     = data.amount ? '₹' + data.amount : '—';
-
-                    const card = document.createElement('div');
-                    card.className = 'order-card';
-                    card.style.cssText = `
-                        background: ${sc.bg};
-                        border-left: 4px solid ${sc.badge};
-                        border-radius: 10px;
-                        padding: 14px 16px;
-                        margin-bottom: 12px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-                    `;
-                    card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                            <div>
-                                <div style="font-weight:700; font-size:15px; color:#1a1a2e;">${service}</div>
-                                <div style="font-size:11px; color:#888; margin-top:2px;">Order #${orderNum--}</div>
-                            </div>
-                            <span style="background:${sc.badge}; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap;">${data.status || 'Unknown'}</span>
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:12px; color:#444;">
-                            <div><i class="fa-solid fa-user" style="color:${sc.badge}; width:14px;"></i> <strong>Customer:</strong> ${custName}</div>
-                            <div><i class="fa-solid fa-user-tie" style="color:${sc.badge}; width:14px;"></i> <strong>Worker:</strong> ${workerName}</div>
-                            <div><i class="fa-solid fa-calendar-days" style="color:${sc.badge}; width:14px;"></i> <strong>Date:</strong> ${dateStr}</div>
-                            <div><i class="fa-solid fa-clock" style="color:${sc.badge}; width:14px;"></i> <strong>Time:</strong> ${timeSlot}</div>
-                            <div><i class="fa-solid fa-location-dot" style="color:${sc.badge}; width:14px;"></i> <strong>Address:</strong> ${address}</div>
-                            <div><i class="fa-solid fa-indian-rupee-sign" style="color:${sc.badge}; width:14px;"></i> <strong>Amount:</strong> ${amount}</div>
-                        </div>
-                        ${desc !== '—' ? `<div style="margin-top:8px; font-size:12px; color:#666;"><i class="fa-solid fa-note-sticky" style="color:${sc.badge};"></i> ${desc}</div>` : ''}
-                        <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:right;">Placed at ${timeStr}</div>
-                    `;
-                    list.appendChild(card);
-                }
+    async function getCustomerName(uid) {
+        if (!uid) return 'Unknown';
+        if (nameCache['c_' + uid]) return nameCache['c_' + uid];
+        try {
+            const q = query(collection(db, 'customers'), where('uid', '==', uid));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const d = snap.docs[0].data();
+                const name = d.name || d.fullName || d.displayName || d.email || 'Customer';
+                nameCache['c_' + uid] = name;
+                return name;
             }
-        );
+        } catch(e) {}
+        return 'Customer';
+    }
+
+    async function getWorkerName(uid) {
+        if (!uid) return 'Not assigned';
+        if (nameCache['w_' + uid]) return nameCache['w_' + uid];
+        try {
+            const q = query(collection(db, 'workers'), where('uid', '==', uid));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const d = snap.docs[0].data();
+                const name = d.name || d.fullName || d.displayName || d.email || 'Worker';
+                nameCache['w_' + uid] = name;
+                return name;
+            }
+        } catch(e) {}
+        return 'Worker';
+    }
+
+    try {
+        unsubOrders = onSnapshot(collection(db, 'bookings'), async (bookingsSnap) => {
+            list.innerHTML = '';
+
+            if (bookingsSnap.empty) {
+                list.innerHTML = '<div style="text-align:center; padding: 30px; color:#888;"><i class="fa-solid fa-inbox" style="font-size:32px; margin-bottom:10px; display:block;"></i>No orders yet.</div>';
+                return;
+            }
+
+            // Collect and sort newest first
+            const docs = [];
+            bookingsSnap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+            docs.sort((a, b) => {
+                const getTs = (x) => {
+                    if (!x.timestamp) return 0;
+                    if (typeof x.timestamp.toMillis === 'function') return x.timestamp.toMillis();
+                    if (x.timestamp instanceof Date) return x.timestamp.getTime();
+                    if (typeof x.timestamp === 'string') return new Date(x.timestamp).getTime();
+                    return 0;
+                };
+                return getTs(b) - getTs(a);
+            });
+
+            let orderNum = docs.length;
+            for (const data of docs) {
+                const sc = statusColors[data.status] || { bg: '#f5f5f5', badge: '#999' };
+
+                // Format booking date
+                let dateStr = '—';
+                try {
+                    if (data.date) dateStr = new Date(data.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                } catch(e) {}
+
+                // Format placed-at time from timestamp
+                let placedAt = '—';
+                try {
+                    let ts = data.timestamp;
+                    if (ts) {
+                        const d2 = typeof ts.toDate === 'function' ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts));
+                        placedAt = d2.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                                 + ', ' + d2.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    }
+                } catch(e) {}
+
+                const address = (data.address || '—').substring(0, 45);
+                const desc    = (data.description || '').substring(0, 70);
+                const service = data.service || '—';
+                const amount  = data.amount ? '₹' + data.amount : '—';
+
+                // Lookup real names
+                const custName   = await getCustomerName(data.userId);
+                const workerName = data.workerId ? await getWorkerName(data.workerId) : 'Not assigned';
+
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                card.style.cssText = `background:${sc.bg}; border-left:4px solid ${sc.badge}; border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06);`;
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                        <div>
+                            <div style="font-weight:700; font-size:15px; color:#1a1a2e;">${service}</div>
+                            <div style="font-size:11px; color:#888; margin-top:2px;">Order #${orderNum--}</div>
+                        </div>
+                        <span style="background:${sc.badge}; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap;">${data.status || 'Unknown'}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px 12px; font-size:12px; color:#444;">
+                        <div><i class="fa-solid fa-user" style="color:${sc.badge}; width:14px;"></i> <strong>Customer:</strong> ${custName}</div>
+                        <div><i class="fa-solid fa-user-tie" style="color:${sc.badge}; width:14px;"></i> <strong>Worker:</strong> ${workerName}</div>
+                        <div><i class="fa-solid fa-calendar-days" style="color:${sc.badge}; width:14px;"></i> <strong>Date:</strong> ${dateStr}</div>
+                        <div><i class="fa-solid fa-indian-rupee-sign" style="color:${sc.badge}; width:14px;"></i> <strong>Amount:</strong> ${amount}</div>
+                        <div style="grid-column:1/-1;"><i class="fa-solid fa-location-dot" style="color:${sc.badge}; width:14px;"></i> <strong>Address:</strong> ${address}</div>
+                        ${desc ? `<div style="grid-column:1/-1;"><i class="fa-solid fa-note-sticky" style="color:${sc.badge}; width:14px;"></i> <strong>Note:</strong> ${desc}</div>` : ''}
+                    </div>
+                    <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:right;"><i class="fa-solid fa-clock"></i> Placed: ${placedAt}</div>
+                `;
+                list.appendChild(card);
+            }
+        });
     } catch(e) {
         console.error('Error fetching admin orders:', e);
         list.innerHTML = '<div style="color:red; padding: 20px;">Error loading orders.</div>';
