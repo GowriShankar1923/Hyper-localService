@@ -2595,6 +2595,9 @@ window.toggleBlockUser = async (uid, newStatus) => {
         const snap = await getDocs(q);
         if (!snap.empty) {
             await updateDoc(snap.docs[0].ref, { status: newStatus });
+            // Refresh UI immediately
+            if (window.fetchAdminCustomers) window.fetchAdminCustomers();
+            if (window.fetchAdminWorkers) window.fetchAdminWorkers();
         } else {
             alert("User not found.");
         }
@@ -2614,6 +2617,9 @@ window.deleteAdminUser = async (uid) => {
             if (!snap.empty) {
                 await deleteDoc(snap.docs[0].ref);
                 alert("User deleted successfully.");
+                // Refresh UI immediately
+                if (window.fetchAdminCustomers) window.fetchAdminCustomers();
+                if (window.fetchAdminWorkers) window.fetchAdminWorkers();
             } else {
                 alert("User not found.");
             }
