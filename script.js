@@ -1217,8 +1217,9 @@ const logoutBtn = document.getElementById('logout-btn');
             workers.forEach(worker => {
                 const card = document.createElement('div');
                 card.className = 'service-card';
-                const bgImage = getServiceImage(worker.service);
-                const profileImg = worker.profileImage ? `<img src="${worker.profileImage}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` : `<div style="width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"><i class="fa-solid fa-user" style="color: #999;"></i></div>`;
+                const mainImageHtml = worker.profileImage ? 
+                    `<div class="service-image" style="background-image: url('${worker.profileImage}'); background-size: cover; background-position: top; border-radius: 12px 12px 0 0;"></div>` : 
+                    `<div class="service-image" style="background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; border-radius: 12px 12px 0 0; color: #ccc; font-size: 50px;"><i class="fa-solid fa-user"></i></div>`;
                 
                 const isBusy = busyWorkerIds.has(worker.id);
                 
@@ -1242,12 +1243,8 @@ const logoutBtn = document.getElementById('logout-btn');
                 }
                 
                 card.innerHTML = `
-                    <div class="service-image" style="background-image: url('${bgImage}'); position: relative;">
-                        <div style="position: absolute; bottom: -20px; left: 15px;">
-                            ${profileImg}
-                        </div>
-                    </div>
-                    <div class="service-info" style="padding-top: 25px;">
+                    ${mainImageHtml}
+                    <div class="service-info">
                         <h4 style="margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">${worker.name} ${statusBadge}</h4>
                         <p style="color:var(--primary-blue);font-weight:500;font-size:13px;margin-bottom:5px;">${worker.service} Professional</p>
                         <p style="font-size:12px;margin-bottom:12px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
