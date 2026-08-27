@@ -1210,10 +1210,19 @@ const logoutBtn = document.getElementById('logout-btn');
                     const sum = worker.ratings.reduce((acc, r) => acc + r.stars, 0);
                     avgRating = (sum / ratingCount).toFixed(1);
                 }
-                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px; ${ratingCount > 0 ? 'cursor:pointer;' : ''}" ${ratingCount > 0 ? `onclick="window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')"` : ''}><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount}) <span style="color:var(--primary-blue); margin-left:4px; font-size:11px; text-decoration:underline;">View Comments</span>` : 'New'}</div>`;
+                
+                // Rapido/Swiggy-style rating badge on image
+                const ratingBadge = avgRating > 0
+                    ? `<div style="position:absolute; top:10px; right:10px; background:${avgRating >= 4 ? '#2e7d32' : avgRating >= 3 ? '#f57c00' : '#c62828'}; color:white; font-size:12px; font-weight:700; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:3px; box-shadow:0 2px 6px rgba(0,0,0,0.25);"><i class="fa-solid fa-star" style="font-size:10px;"></i> ${avgRating}</div>`
+                    : `<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.45); color:white; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px;">New</div>`;
+                
+                const reviewLink = ratingCount > 0
+                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')">${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
+                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px;">No reviews yet</div>`;
 
                 card.innerHTML = `
                     <div class="service-image" style="background-image: url('${bgImage}'); position: relative;">
+                        ${ratingBadge}
                         <div style="position: absolute; bottom: -20px; left: 15px;">
                             ${profileImg}
                         </div>
@@ -1221,8 +1230,8 @@ const logoutBtn = document.getElementById('logout-btn');
                     <div class="service-info" style="padding-top: 25px;">
                         <h4 style="margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">${worker.name} ${statusBadge}</h4>
                         <p style="color:var(--primary-blue);font-weight:500;font-size:13px;margin-bottom:5px;">${worker.service} Professional</p>
-                        <p style="font-size:12px;margin-bottom:6px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
-                        ${ratingHtml}
+                        <p style="font-size:12px;margin-bottom:4px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
+                        ${reviewLink}
                         ${btnHtml}
                     </div>
                 `;
@@ -1311,15 +1320,30 @@ const logoutBtn = document.getElementById('logout-btn');
                     const sum = worker.ratings.reduce((acc, r) => acc + r.stars, 0);
                     avgRating = (sum / ratingCount).toFixed(1);
                 }
-                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px; ${ratingCount > 0 ? 'cursor:pointer;' : ''}" ${ratingCount > 0 ? `onclick="window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')"` : ''}><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount}) <span style="color:var(--primary-blue); margin-left:4px; font-size:11px; text-decoration:underline;">View Comments</span>` : 'New'}</div>`;
                 
+                // Rapido/Swiggy-style rating badge - overlay on main image
+                let mainImageWithBadge;
+                const ratingBadge2 = avgRating > 0
+                    ? `<div style="position:absolute; top:10px; right:10px; background:${avgRating >= 4 ? '#2e7d32' : avgRating >= 3 ? '#f57c00' : '#c62828'}; color:white; font-size:12px; font-weight:700; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:3px; box-shadow:0 2px 6px rgba(0,0,0,0.25);"><i class="fa-solid fa-star" style="font-size:10px;"></i> ${avgRating}</div>`
+                    : `<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.45); color:white; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px;">New</div>`;
+
+                if (worker.profileImage) {
+                    mainImageWithBadge = `<div class="service-image" style="background-image: url('${worker.profileImage}'); background-size: cover; background-position: top; border-radius: 12px 12px 0 0; position:relative;">${ratingBadge2}</div>`;
+                } else {
+                    mainImageWithBadge = `<div class="service-image" style="background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; border-radius: 12px 12px 0 0; color: #ccc; font-size: 50px; position:relative;"><i class="fa-solid fa-user"></i>${ratingBadge2}</div>`;
+                }
+
+                const reviewLink2 = ratingCount > 0
+                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')">${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
+                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px;">No reviews yet</div>`;
+
                 card.innerHTML = `
-                    ${mainImageHtml}
+                    ${mainImageWithBadge}
                     <div class="service-info">
                         <h4 style="margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">${worker.name} ${statusBadge}</h4>
                         <p style="color:var(--primary-blue);font-weight:500;font-size:13px;margin-bottom:5px;">${worker.service} Professional</p>
                         <p style="font-size:12px;margin-bottom:6px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
-                        ${ratingHtml}
+                        ${reviewLink2}
                         ${btnHtml}
                     </div>
                 `;
