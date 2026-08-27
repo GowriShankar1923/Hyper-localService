@@ -1308,8 +1308,8 @@ const logoutBtn = document.getElementById('logout-btn');
                     const userLoc = stripForMatch(cleanLocation);
                     
                     if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
-                        // Deduplicate by UID in case of multiple profile documents
-                        if (!workers.find(w => w.id === data.uid)) {
+                        // Deduplicate by UID or exact Name in case of multiple test profile documents
+                        if (!workers.find(w => w.id === data.uid || (w.name && w.name === data.name))) {
                             workers.push({ id: data.uid, ...data });
                         }
                     }
