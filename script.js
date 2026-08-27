@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where, getDoc, onSnapshot, arrayUnion, enableIndexedDbPersistence, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, query, where, getDoc, onSnapshot, arrayUnion, enableIndexedDbPersistence, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // TODO: Replace this with your actual Firebase config object from the Firebase Console
@@ -260,6 +260,8 @@ const logoutBtn = document.getElementById('logout-btn');
                         resolve('worker');
                     };
                 });
+                
+                if (window.cancelChatDeletion) window.cancelChatDeletion(userData.uid, 'system');
 
                 if (actualRole !== 'both' && actualRole !== selectedRole) {
                     alert(`Your email is not registered as a ${selectedRole}. Please log in as a ${actualRole}.`);
@@ -296,6 +298,22 @@ const logoutBtn = document.getElementById('logout-btn');
     };
     
     logoutBtn.addEventListener('click', handleLogout);
+
+    // Chat auto-deletion helpers
+    window.scheduleChatDeletion = async (uid1, uid2) => {
+        if (!uid1 || !uid2) return;
+        try {
+            const chatDocId = uid1 < uid2 ? `chat_${uid1}_${uid2}` : `chat_${uid2}_${uid1}`;
+            await updateDoc(doc(db, "chats", chatDocId), { expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
+        } catch (e) {}
+    };
+    window.cancelChatDeletion = async (uid1, uid2) => {
+        if (!uid1 || !uid2) return;
+        try {
+            const chatDocId = uid1 < uid2 ? `chat_${uid1}_${uid2}` : `chat_${uid2}_${uid1}`;
+            await updateDoc(doc(db, "chats", chatDocId), { expiresAt: null });
+        } catch (e) {}
+    };
 
     // Home Header Menu Logic
     const homeMenuBtn = document.getElementById('home-menu-btn');
@@ -337,6 +355,7 @@ const logoutBtn = document.getElementById('logout-btn');
                             updatePromises.push(
                                 updateDoc(doc(db, "bookings", bDoc.id), { status: 'Completed' }).then(() => {
                                     addNotification(bDoc.data().userId, "Your worker has marked the job as Completed.");
+                                    if (window.scheduleChatDeletion) window.scheduleChatDeletion(bDoc.data().userId, bDoc.data().workerId);
                                 })
                             );
                             updatedCount++;
@@ -1446,6 +1465,9 @@ const logoutBtn = document.getElementById('logout-btn');
 
             try {
                 const targetWorkerId = bookingForm.getAttribute('data-target-worker-id');
+                // Ensure chat deletion is canceled when a new booking is created
+                if (window.cancelChatDeletion) window.cancelChatDeletion(user.uid, targetWorkerId);
+
                 await addDoc(collection(db, "bookings"), {
                     userId: user.uid,
                     workerId: targetWorkerId,
@@ -1561,6 +1583,7 @@ const logoutBtn = document.getElementById('logout-btn');
                 const booking = bookingDoc.data();
                 if (booking.otp === enteredOtp) {
                     await updateDoc(doc(db, "bookings", id), { status: 'Completed' });
+                    if (window.scheduleChatDeletion) window.scheduleChatDeletion(booking.userId, booking.workerId);
                     closeOtpVerifyModal.click();
                     otpVerifyForm.reset();
                     if (window.fetchBookings) fetchBookings(auth.currentUser.uid);
@@ -1783,6 +1806,7 @@ const logoutBtn = document.getElementById('logout-btn');
                             if (booking.otp === enteredOtp) {
                                 errorDiv.style.display = 'none';
                                 await updateDoc(doc(db, "bookings", id), { status: 'Completed' });
+                                if (window.scheduleChatDeletion) window.scheduleChatDeletion(booking.userId, booking.workerId);
                                 alert("Payment Verified & Job Completed!");
                                 addNotification(booking.userId, `Payment verified successfully. Job Completed!`);
                                 fetchBookings(userId);
@@ -1799,6 +1823,8 @@ const logoutBtn = document.getElementById('logout-btn');
                         if (confirm("Are you sure you want to mark this job as completed? This will bypass the OTP and release you for other bookings.")) {
                             const id = btn.getAttribute('data-id');
                             await updateDoc(doc(db, "bookings", id), { status: 'Completed' });
+                            const bDoc = await getDoc(doc(db, "bookings", id));
+                            if (bDoc.exists() && window.scheduleChatDeletion) window.scheduleChatDeletion(bDoc.data().userId, bDoc.data().workerId);
                             alert("Job forcefully completed. You are now available for other bookings!");
                             
                             const bookingDoc = await getDoc(doc(db, "bookings", id));
@@ -3442,6 +3468,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const data = snapshot.data();
+            
+            // Auto-delete expired chats
+            if (data.expiresAt && data.expiresAt < Date.now()) {
+                await deleteDoc(doc(db, 'chats', currentChatDocId)).catch(e => {});
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888; font-size: 13px;">This chat has expired and been deleted.</div>';
+                return;
+            }
+            
             const msgs = data.messages || [];
             
             container.innerHTML = '';
@@ -3478,19 +3512,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const q = query(collection(db, 'chats'), where('participants', 'array-contains', myUid));
         
         unsubInbox = onSnapshot(q, (snapshot) => {
-            container.innerHTML = '';
             if (snapshot.empty) {
                 container.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No conversations yet.</div>';
                 return;
             }
             
             let chatsArray = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.expiresAt && data.expiresAt < Date.now()) {
+                    deleteDoc(doc(db, 'chats', docSnap.id)).catch(e => {});
+                    return; // Skip rendering
+                }
                 if (data.messages && data.messages.length > 0) {
-                    chatsArray.push({ id: doc.id, ...data });
+                    chatsArray.push({ id: docSnap.id, ...data });
                 }
             });
+            
+            container.innerHTML = '';
             
             if (chatsArray.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No conversations yet.</div>';
