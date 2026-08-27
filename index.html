@@ -1051,6 +1051,43 @@
             </div>
         </div>
     </div>
+    <!-- Rating Modal -->
+    <div id="rating-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3500; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 16px; padding: 25px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; font-size: 18px; color: #333;">Rate Service</h3>
+                <i class="fa-solid fa-xmark" id="btn-rating-close" style="cursor: pointer; color: #888; font-size: 20px;"></i>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <div id="rating-stars-container" style="display: flex; justify-content: center; gap: 10px; font-size: 32px; color: #ddd; cursor: pointer;">
+                    <i class="fa-solid fa-star" data-val="1"></i>
+                    <i class="fa-solid fa-star" data-val="2"></i>
+                    <i class="fa-solid fa-star" data-val="3"></i>
+                    <i class="fa-solid fa-star" data-val="4"></i>
+                    <i class="fa-solid fa-star" data-val="5"></i>
+                </div>
+                <div id="rating-label" style="margin-top: 10px; font-weight: 600; color: #555; height: 20px;">Select a rating</div>
+            </div>
+            
+            <textarea id="rating-comment" placeholder="Leave an optional comment..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; margin-bottom: 20px; resize: none; box-sizing: border-box; font-family: inherit;"></textarea>
+            
+            <button id="btn-rating-submit" class="login-btn" style="width: 100%; background: var(--primary-blue); font-weight: 600;">Submit Rating</button>
+        </div>
+    </div>
+
+    <!-- Admin Comments Modal -->
+    <div id="admin-comments-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3500; justify-content: center; align-items: flex-end;">
+        <div style="background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+            <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px; color: #333;"><i class="fa-solid fa-comments" style="margin-right:8px; color: var(--primary-blue);"></i> User Comments</h3>
+                <i class="fa-solid fa-xmark" id="btn-comments-close" style="cursor: pointer; color: #888; font-size: 20px;"></i>
+            </div>
+            <div id="admin-comments-list" style="padding: 20px; overflow-y: auto; flex: 1;">
+                <!-- Comments populate here -->
+            </div>
+        </div>
+    </div>
 
     <!-- Blocked Worker Overlay -->
     <div id="worker-blocked-overlay" style="display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); z-index: 2800; backdrop-filter: blur(5px); flex-direction: column; align-items: center; justify-content: center; text-align: center;">
