@@ -1966,6 +1966,7 @@ const logoutBtn = document.getElementById('logout-btn');
                         <span class="booking-service">${booking.service}</span>
                         <div style="display: flex; align-items: center;">
                             <span class="booking-status status-${booking.status.toLowerCase()}">${booking.status}</span>
+                            <i class="fa-solid fa-message message-other-user-btn" data-target-uid="${isWorker ? booking.userId : booking.workerId}" data-target-name="${isWorker ? 'Customer' : 'Worker'}" style="margin-left: 15px; cursor: pointer; color: var(--primary-blue); font-size: 18px;" title="Chat"></i>
                             ${threeDotsMenu}
                         </div>
                     </div>
@@ -1995,6 +1996,19 @@ const logoutBtn = document.getElementById('logout-btn');
                     // Close all other dropdowns
                     document.querySelectorAll('.menu-dropdown').forEach(d => d.style.display = 'none');
                     if (isHidden) dropdown.style.display = 'block';
+                };
+            });
+
+            // Message Other User logic
+            document.querySelectorAll('.message-other-user-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const targetUid = btn.getAttribute('data-target-uid');
+                    const targetName = btn.getAttribute('data-target-name');
+                    if (targetUid) {
+                        window.openChatModal(targetUid, targetName);
+                    } else {
+                        alert("Cannot start chat. The user ID is missing (this might be a legacy booking).");
+                    }
                 };
             });
 
@@ -2888,7 +2902,7 @@ window.fetchAdminWorkers = () => {
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
                         <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${isBlocked ? '#FFEBEE' : '#F3E5F5'};color:${isBlocked ? '#C62828' : '#6A1B9A'};">${isBlocked ? 'BLOCKED' : 'ACTIVE'}</span>
-                        <button onclick="window.openChatModal('${data.uid}', '${data.name || 'Worker'}', true)" style="background:var(--primary-blue);color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;"><i class="fa-solid fa-message" style="margin-right:4px;"></i>Chat Now</button>
+                        <button onclick="window.openChatModal('${data.uid}', '${data.name || 'Worker'}')" style="background:var(--primary-blue);color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;"><i class="fa-solid fa-message" style="margin-right:4px;"></i>Chat Now</button>
                         <div style="position:relative;">
                             <i class="fa-solid fa-ellipsis-vertical" style="padding:8px;cursor:pointer;color:#999;" onclick="const m=this.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';"></i>
                             <div style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.15);width:130px;z-index:50;">
@@ -3635,33 +3649,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CHAT SYSTEM LOGIC ---
     let unsubChat = null;
-    let currentChatTargetUid = null;
-    let isCurrentChatAdmin = false;
+    let unsubInbox = null;
+    let currentChatDocId = null;
 
-    window.openChatModal = (targetUid, targetName, isAdminView) => {
+    window.openChatModal = (otherUid, otherName) => {
         const modal = document.getElementById('chat-modal');
         const title = document.getElementById('chat-modal-title');
         const container = document.getElementById('chat-messages-container');
         
-        if (!modal) return;
+        if (!modal || !auth.currentUser) return;
         
-        currentChatTargetUid = targetUid;
-        isCurrentChatAdmin = isAdminView;
+        const myUid = auth.currentUser.uid;
+        const myRole = window.selectedSessionRole || localStorage.getItem('selectedSessionRole') || 'customer';
+        const myName = myRole === 'admin' ? 'Admin' : (auth.currentUser.displayName || 'User');
         
-        title.textContent = isAdminView ? `Chat with ${targetName}` : 'Chat with Admin';
+        // Generate consistent chat ID (alphabetical sort)
+        currentChatDocId = myUid < otherUid ? `chat_${myUid}_${otherUid}` : `chat_${otherUid}_${myUid}`;
+        
+        title.textContent = `Chat with ${otherName}`;
         modal.style.display = 'flex';
         container.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
         
         if (unsubChat) unsubChat();
         
-        const chatDocId = `admin_${targetUid}`;
-        const chatRef = doc(db, 'chats', chatDocId);
+        const chatRef = doc(db, 'chats', currentChatDocId);
         
-        unsubChat = onSnapshot(chatRef, (snapshot) => {
+        unsubChat = onSnapshot(chatRef, async (snapshot) => {
             if (!snapshot.exists()) {
+                // Initialize the chat document structure if it doesn't exist yet
+                await setDoc(chatRef, {
+                    participants: [myUid, otherUid],
+                    names: {
+                        [myUid]: myName,
+                        [otherUid]: otherName
+                    },
+                    messages: []
+                });
                 container.innerHTML = '<div style="text-align:center; padding:20px; color:#888; font-size: 13px;">No messages yet. Send a message to start!</div>';
                 return;
             }
+            
             const data = snapshot.data();
             const msgs = data.messages || [];
             
@@ -3671,13 +3698,80 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 msgs.forEach(m => {
                     const el = document.createElement('div');
-                    const isMyMsg = isAdminView ? (m.sender === 'admin') : (m.sender === 'user');
+                    const isMyMsg = (m.sender === myUid);
                     el.className = `chat-bubble ${isMyMsg ? 'user' : 'admin'}`;
                     el.textContent = m.text;
                     container.appendChild(el);
                 });
                 container.scrollTop = container.scrollHeight;
             }
+        });
+    };
+    
+    window.openInboxModal = () => {
+        const modal = document.getElementById('inbox-modal');
+        const container = document.getElementById('inbox-list-container');
+        
+        if (!modal || !auth.currentUser) {
+            alert("Please log in to view messages.");
+            return;
+        }
+        
+        const myUid = auth.currentUser.uid;
+        modal.style.display = 'flex';
+        container.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        
+        if (unsubInbox) unsubInbox();
+        
+        const q = query(collection(db, 'chats'), where('participants', 'array-contains', myUid));
+        
+        unsubInbox = onSnapshot(q, (snapshot) => {
+            container.innerHTML = '';
+            if (snapshot.empty) {
+                container.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No conversations yet.</div>';
+                return;
+            }
+            
+            let chatsArray = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.messages && data.messages.length > 0) {
+                    chatsArray.push({ id: doc.id, ...data });
+                }
+            });
+            
+            if (chatsArray.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No conversations yet.</div>';
+                return;
+            }
+            
+            // Sort by latest message timestamp
+            chatsArray.sort((a, b) => {
+                const lastA = a.messages[a.messages.length - 1].timestamp;
+                const lastB = b.messages[b.messages.length - 1].timestamp;
+                return lastB - lastA;
+            });
+            
+            chatsArray.forEach(chat => {
+                const otherUid = chat.participants.find(uid => uid !== myUid);
+                const otherName = chat.names ? chat.names[otherUid] : 'User';
+                const lastMsg = chat.messages[chat.messages.length - 1];
+                
+                const el = document.createElement('div');
+                el.className = 'inbox-item';
+                el.innerHTML = `
+                    <div class="inbox-item-avatar">${otherName.charAt(0).toUpperCase()}</div>
+                    <div class="inbox-item-details">
+                        <div class="inbox-item-name">${otherName}</div>
+                        <div class="inbox-item-preview">${lastMsg.sender === myUid ? 'You: ' : ''}${lastMsg.text}</div>
+                    </div>
+                `;
+                el.onclick = () => {
+                    modal.style.display = 'none';
+                    window.openChatModal(otherUid, otherName);
+                };
+                container.appendChild(el);
+            });
         });
     };
 
@@ -3687,12 +3781,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatSendBtn && chatInput) {
         const handleSend = async () => {
             const text = chatInput.value.trim();
-            if (!text || !currentChatTargetUid) return;
+            if (!text || !currentChatDocId || !auth.currentUser) return;
             
-            const chatDocId = `admin_${currentChatTargetUid}`;
-            const chatRef = doc(db, 'chats', chatDocId);
+            const chatRef = doc(db, 'chats', currentChatDocId);
             const msgObj = {
-                sender: isCurrentChatAdmin ? 'admin' : 'user',
+                sender: auth.currentUser.uid,
                 text: text,
                 timestamp: Date.now()
             };
@@ -3700,9 +3793,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatInput.value = '';
             
             try {
-                // We use setDoc with merge so if the document doesn't exist, it is created
                 await setDoc(chatRef, {
-                    userId: currentChatTargetUid,
                     messages: arrayUnion(msgObj)
                 }, { merge: true });
             } catch (e) {
@@ -3721,18 +3812,22 @@ document.addEventListener('DOMContentLoaded', () => {
         chatCloseBtn.addEventListener('click', () => {
             document.getElementById('chat-modal').style.display = 'none';
             if (unsubChat) unsubChat();
-            currentChatTargetUid = null;
+            currentChatDocId = null;
+        });
+    }
+    
+    const inboxCloseBtn = document.getElementById('inbox-close-btn');
+    if (inboxCloseBtn) {
+        inboxCloseBtn.addEventListener('click', () => {
+            document.getElementById('inbox-modal').style.display = 'none';
+            if (unsubInbox) unsubInbox();
         });
     }
     
     const homeMsgBtn = document.getElementById('home-msg-btn');
     if (homeMsgBtn) {
         homeMsgBtn.addEventListener('click', () => {
-            if (auth.currentUser) {
-                window.openChatModal(auth.currentUser.uid, 'Admin', false);
-            } else {
-                alert("Please log in to chat.");
-            }
+            window.openInboxModal();
         });
     }
 

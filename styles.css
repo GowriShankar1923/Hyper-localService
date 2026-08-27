@@ -2009,6 +2009,49 @@ body.dark-mode .modal-content {
         gap: 5px;
     }
 }
+/* --- Inbox Items --- */
+.inbox-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.inbox-item:hover {
+    background: #f5f5f5;
+}
+.inbox-item-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--primary-blue);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+.inbox-item-details {
+    flex: 1;
+}
+.inbox-item-name {
+    font-weight: bold;
+    font-size: 15px;
+    color: #333;
+    margin-bottom: 4px;
+}
+.inbox-item-preview {
+    font-size: 13px;
+    color: #777;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+}
+
 /* --- Chat Modal --- */
 .chat-modal-content {
     background: white;

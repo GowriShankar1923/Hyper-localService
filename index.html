@@ -1027,6 +1027,19 @@
         </div>
     </div>
 
+    <!-- Inbox Modal -->
+    <div id="inbox-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2900; justify-content: center; align-items: flex-end; sm:align-items:center;">
+        <div class="chat-modal-content">
+            <div class="chat-header">
+                <h3 style="margin: 0; font-size: 16px; color: white;"><i class="fa-solid fa-inbox" style="margin-right:8px;"></i> Messages</h3>
+                <i class="fa-solid fa-xmark" id="inbox-close-btn" style="cursor: pointer; color: white; font-size: 20px; padding: 5px;"></i>
+            </div>
+            <div id="inbox-list-container" class="chat-messages" style="background: white; padding: 0;">
+                <!-- Inbox items populate here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Chat Modal -->
     <div id="chat-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: flex-end; sm:align-items:center;">
         <div class="chat-modal-content">
