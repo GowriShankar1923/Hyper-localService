@@ -2621,39 +2621,38 @@ window.fetchAdminOrders = () => {
         'Canceled':       { bg: '#FFEBEE', badge: '#E53935' },
     };
 
-    // Cache for name lookups to avoid redundant Firestore reads
+    // Name lookup cache
     const nameCache = {};
-
-    async function getCustomerName(uid) {
-        if (!uid) return 'Unknown';
-        if (nameCache['c_' + uid]) return nameCache['c_' + uid];
+    async function lookupName(collection_name, uid, fallback) {
+        if (!uid) return fallback;
+        const key = collection_name + uid;
+        if (nameCache[key]) return nameCache[key];
         try {
-            const q = query(collection(db, 'customers'), where('uid', '==', uid));
+            const q = query(collection(db, collection_name), where('uid', '==', uid));
             const snap = await getDocs(q);
             if (!snap.empty) {
                 const d = snap.docs[0].data();
-                const name = d.name || d.fullName || d.displayName || d.email || 'Customer';
-                nameCache['c_' + uid] = name;
-                return name;
+                const n = d.name || d.fullName || d.displayName || d.email || fallback;
+                nameCache[key] = n;
+                return n;
             }
         } catch(e) {}
-        return 'Customer';
+        return fallback;
     }
 
-    async function getWorkerName(uid) {
-        if (!uid) return 'Not assigned';
-        if (nameCache['w_' + uid]) return nameCache['w_' + uid];
+    function getTimestamp(data) {
+        if (!data.timestamp) return 0;
+        if (typeof data.timestamp.toMillis === 'function') return data.timestamp.toMillis();
+        if (data.timestamp instanceof Date) return data.timestamp.getTime();
+        if (typeof data.timestamp === 'string') return new Date(data.timestamp).getTime();
+        return 0;
+    }
+
+    function formatDateKey(dateStr) {
+        if (!dateStr) return 'Unknown Date';
         try {
-            const q = query(collection(db, 'workers'), where('uid', '==', uid));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                const d = snap.docs[0].data();
-                const name = d.name || d.fullName || d.displayName || d.email || 'Worker';
-                nameCache['w_' + uid] = name;
-                return name;
-            }
-        } catch(e) {}
-        return 'Worker';
+            return new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+        } catch(e) { return dateStr; }
     }
 
     try {
@@ -2661,83 +2660,97 @@ window.fetchAdminOrders = () => {
             list.innerHTML = '';
 
             if (bookingsSnap.empty) {
-                list.innerHTML = '<div style="text-align:center; padding: 30px; color:#888;"><i class="fa-solid fa-inbox" style="font-size:32px; margin-bottom:10px; display:block;"></i>No orders yet.</div>';
+                list.innerHTML = '<div style="text-align:center;padding:30px;color:#888;"><i class="fa-solid fa-inbox" style="font-size:32px;display:block;margin-bottom:10px;"></i>No orders yet.</div>';
                 return;
             }
 
-            // Collect and sort newest first
+            // Collect all docs
             const docs = [];
             bookingsSnap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+
+            // Sort by booking date descending, then by timestamp within same date
             docs.sort((a, b) => {
-                const getTs = (x) => {
-                    if (!x.timestamp) return 0;
-                    if (typeof x.timestamp.toMillis === 'function') return x.timestamp.toMillis();
-                    if (x.timestamp instanceof Date) return x.timestamp.getTime();
-                    if (typeof x.timestamp === 'string') return new Date(x.timestamp).getTime();
-                    return 0;
-                };
-                return getTs(b) - getTs(a);
+                const dateA = a.date ? new Date(a.date).getTime() : getTimestamp(a);
+                const dateB = b.date ? new Date(b.date).getTime() : getTimestamp(b);
+                if (dateB !== dateA) return dateB - dateA;
+                return getTimestamp(b) - getTimestamp(a);
             });
 
-            let orderNum = docs.length;
+            // Group by date
+            const grouped = {};
+            const dateOrder = [];
             for (const data of docs) {
-                const sc = statusColors[data.status] || { bg: '#f5f5f5', badge: '#999' };
+                const dateKey = data.date || 'Unknown Date';
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = [];
+                    dateOrder.push(dateKey);
+                }
+                grouped[dateKey].push(data);
+            }
 
-                // Format booking date
-                let dateStr = '—';
-                try {
-                    if (data.date) dateStr = new Date(data.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                } catch(e) {}
+            // Render each date group
+            for (const dateKey of dateOrder) {
+                const orders = grouped[dateKey];
+                const displayDate = formatDateKey(dateKey);
+                const totalOrders = orders.length;
+                const completed = orders.filter(o => o.status === 'Completed').length;
 
-                // Format placed-at time from timestamp
-                let placedAt = '—';
-                try {
-                    let ts = data.timestamp;
-                    if (ts) {
-                        const d2 = typeof ts.toDate === 'function' ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts));
-                        placedAt = d2.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-                                 + ', ' + d2.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                    }
-                } catch(e) {}
-
-                const address = (data.address || '—').substring(0, 45);
-                const desc    = (data.description || '').substring(0, 70);
-                const service = data.service || '—';
-                const amount  = data.amount ? '₹' + data.amount : '—';
-
-                // Lookup real names
-                const custName   = await getCustomerName(data.userId);
-                const workerName = data.workerId ? await getWorkerName(data.workerId) : 'Not assigned';
-
-                const card = document.createElement('div');
-                card.className = 'order-card';
-                card.style.cssText = `background:${sc.bg}; border-left:4px solid ${sc.badge}; border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06);`;
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                        <div>
-                            <div style="font-weight:700; font-size:15px; color:#1a1a2e;">${service}</div>
-                            <div style="font-size:11px; color:#888; margin-top:2px;">Order #${orderNum--}</div>
-                        </div>
-                        <span style="background:${sc.badge}; color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap;">${data.status || 'Unknown'}</span>
+                // Date section header
+                const header = document.createElement('div');
+                header.style.cssText = 'background:linear-gradient(135deg,#1565C0,#42A5F5); color:white; padding:12px 16px; border-radius:10px; margin-bottom:8px; margin-top:16px; display:flex; justify-content:space-between; align-items:center;';
+                header.innerHTML = `
+                    <div>
+                        <div style="font-weight:700; font-size:14px;"><i class="fa-solid fa-calendar-days" style="margin-right:6px;"></i>${displayDate}</div>
+                        <div style="font-size:11px; opacity:0.85; margin-top:2px;">${totalOrders} order${totalOrders > 1 ? 's' : ''} · ${completed} completed</div>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px 12px; font-size:12px; color:#444;">
-                        <div><i class="fa-solid fa-user" style="color:${sc.badge}; width:14px;"></i> <strong>Customer:</strong> ${custName}</div>
-                        <div><i class="fa-solid fa-user-tie" style="color:${sc.badge}; width:14px;"></i> <strong>Worker:</strong> ${workerName}</div>
-                        <div><i class="fa-solid fa-calendar-days" style="color:${sc.badge}; width:14px;"></i> <strong>Date:</strong> ${dateStr}</div>
-                        <div><i class="fa-solid fa-indian-rupee-sign" style="color:${sc.badge}; width:14px;"></i> <strong>Amount:</strong> ${amount}</div>
-                        <div style="grid-column:1/-1;"><i class="fa-solid fa-location-dot" style="color:${sc.badge}; width:14px;"></i> <strong>Address:</strong> ${address}</div>
-                        ${desc ? `<div style="grid-column:1/-1;"><i class="fa-solid fa-note-sticky" style="color:${sc.badge}; width:14px;"></i> <strong>Note:</strong> ${desc}</div>` : ''}
-                    </div>
-                    <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:right;"><i class="fa-solid fa-clock"></i> Placed: ${placedAt}</div>
+                    <span style="background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700;">${totalOrders}</span>
                 `;
-                list.appendChild(card);
+                list.appendChild(header);
+
+                // Orders under this date
+                for (const data of orders) {
+                    const sc = statusColors[data.status] || { bg: '#f5f5f5', badge: '#999' };
+                    const service = data.service || '—';
+                    const address = (data.address || '—').substring(0, 50);
+                    const desc    = (data.description || '').substring(0, 60);
+
+                    // Placed-at time
+                    let placedTime = '';
+                    try {
+                        const ts = data.timestamp;
+                        if (ts) {
+                            const d2 = typeof ts.toDate === 'function' ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts));
+                            placedTime = d2.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                        }
+                    } catch(e) {}
+
+                    const custName   = await lookupName('customers', data.userId,  'Customer');
+                    const workerName = data.workerId ? await lookupName('workers', data.workerId, await lookupName('customers', data.workerId, 'Worker')) : 'Not assigned';
+
+                    const card = document.createElement('div');
+                    card.className = 'order-card';
+                    card.style.cssText = `background:${sc.bg}; border-left:4px solid ${sc.badge}; border-radius:10px; padding:12px 14px; margin-bottom:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05);`;
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="font-weight:700; font-size:14px; color:#1a1a2e;">${service}</div>
+                            <span style="background:${sc.badge}; color:white; font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px;">${data.status || 'Unknown'}</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:12px; color:#444;">
+                            <div><i class="fa-solid fa-user" style="color:${sc.badge}; width:13px;"></i> <strong>Customer:</strong> ${custName}</div>
+                            <div><i class="fa-solid fa-user-tie" style="color:${sc.badge}; width:13px;"></i> <strong>Worker:</strong> ${workerName}</div>
+                            <div style="grid-column:1/-1;"><i class="fa-solid fa-location-dot" style="color:${sc.badge}; width:13px;"></i> ${address}</div>
+                            ${desc ? `<div style="grid-column:1/-1; color:#666;"><i class="fa-solid fa-note-sticky" style="color:${sc.badge}; width:13px;"></i> ${desc}</div>` : ''}
+                        </div>
+                        ${placedTime ? `<div style="margin-top:6px; font-size:11px; color:#aaa; text-align:right;"><i class="fa-solid fa-clock"></i> ${placedTime}</div>` : ''}
+                    `;
+                    list.appendChild(card);
+                }
             }
         });
     } catch(e) {
         console.error('Error fetching admin orders:', e);
         list.innerHTML = '<div style="color:red; padding: 20px;">Error loading orders.</div>';
     }
-};
 
 window.deleteAdminUser = async (uid) => {
     if (confirm("Are you sure you want to permanently delete this user? This cannot be undone.")) {
@@ -2761,39 +2774,47 @@ window.deleteAdminUser = async (uid) => {
 
 window.fetchAdminCustomers = () => {
     const list = document.getElementById('admin-customers-list');
-    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading customers...</div>';
 
     if (unsubCustomers) unsubCustomers();
 
     try {
-        const q = query(collection(db, "customers"), where("role", "in", ["customer", "both"]));
-        unsubCustomers = onSnapshot(q, (customersSnap) => {
+        const q = query(collection(db, 'customers'), where('role', 'in', ['customer', 'both']));
+        unsubCustomers = onSnapshot(q, (snap) => {
             list.innerHTML = '';
-            if (customersSnap.empty) {
-                list.innerHTML = '<div style="text-align:center; padding: 20px;">No customers found.</div>';
+            if (snap.empty) {
+                list.innerHTML = '<div style="text-align:center;padding:30px;color:#888;"><i class="fa-solid fa-users" style="font-size:32px;display:block;margin-bottom:10px;"></i>No customers found.</div>';
                 return;
             }
-            customersSnap.forEach(snapDoc => {
-                const data = snapDoc.data();
+            // Sort by name
+            const docs = [];
+            snap.forEach(d => docs.push(d.data()));
+            docs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+            docs.forEach((data, i) => {
+                const isBlocked = data.status === 'blocked';
                 const el = document.createElement('div');
                 el.className = 'admin-user-card';
+                el.style.cssText = 'border-left:4px solid ' + (isBlocked ? '#E53935' : '#43A047') + '; margin-bottom:10px; border-radius:10px; padding:14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; align-items:center; gap:12px;';
                 el.innerHTML = `
-                    ${data.profileImage ? `<img src="${data.profileImage}" alt="Profile" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;flex-shrink:0;">` : `<div class="avatar-placeholder" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ccc; margin-right: 15px; flex-shrink:0;"><i class="fa-solid fa-circle-user"></i></div>`}
-                    <div class="admin-user-info" style="flex: 1;">
-                        <h4>${data.name}</h4>
-                        <p>Email: ${data.email}</p>
-                        <p>Phone: ${data.phone} | Location: ${data.location}</p>
-                        <p style="color: ${data.status === 'blocked' ? 'red' : 'green'}; font-weight: bold; font-size: 11px;">Status: ${data.status ? data.status.toUpperCase() : 'ACTIVE'}</p>
+                    ${data.profileImage
+                        ? `<img src="${data.profileImage}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e0e0e0;">`
+                        : `<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1565C0,#42A5F5);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-user" style="color:white;font-size:22px;"></i></div>`}
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:4px;">${data.name || 'Unknown'}</div>
+                        <div style="font-size:12px;color:#555;margin-bottom:2px;"><i class="fa-solid fa-phone" style="color:#1565C0;width:14px;"></i> ${data.phone || '—'}</div>
+                        <div style="font-size:12px;color:#555;margin-bottom:2px;"><i class="fa-solid fa-location-dot" style="color:#1565C0;width:14px;"></i> ${data.location || '—'}</div>
+                        <div style="font-size:12px;color:#777;"><i class="fa-solid fa-envelope" style="color:#1565C0;width:14px;"></i> ${data.email || '—'}</div>
                     </div>
-                    <div class="admin-card-menu-container" style="position: relative;">
-                        <i class="fa-solid fa-ellipsis-vertical" style="padding: 10px; cursor: pointer; color: #666;" onclick="const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'block' ? 'none' : 'block';"></i>
-                        <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 120px; z-index: 10;">
-                            <button onclick="window.toggleBlockUser('${data.uid}', '${data.status === 'blocked' ? 'active' : 'blocked'}')" style="width: 100%; text-align: left; padding: 10px; border: none; background: none; cursor: pointer;">
-                                <i class="fa-solid fa-ban" style="color: orange; margin-right: 5px;"></i> ${data.status === 'blocked' ? 'Unblock' : 'Block'}
-                            </button>
-                            <button onclick="window.deleteAdminUser('${data.uid}')" style="width: 100%; text-align: left; padding: 10px; border: none; background: none; cursor: pointer; color: #d32f2f;">
-                                <i class="fa-solid fa-trash" style="margin-right: 5px;"></i> Delete
-                            </button>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                        <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${isBlocked ? '#FFEBEE' : '#E8F5E9'};color:${isBlocked ? '#C62828' : '#2E7D32'};">${isBlocked ? 'BLOCKED' : 'ACTIVE'}</span>
+                        <div style="position:relative;">
+                            <i class="fa-solid fa-ellipsis-vertical" style="padding:8px;cursor:pointer;color:#999;" onclick="const m=this.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';"></i>
+                            <div style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.15);width:130px;z-index:50;">
+                                <button onclick="window.toggleBlockUser('${data.uid}','${isBlocked ? 'active' : 'blocked'}')" style="width:100%;text-align:left;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;"><i class="fa-solid fa-ban" style="color:orange;margin-right:6px;"></i>${isBlocked ? 'Unblock' : 'Block'}</button>
+                                <button onclick="window.deleteAdminUser('${data.uid}')" style="width:100%;text-align:left;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;color:#d32f2f;"><i class="fa-solid fa-trash" style="margin-right:6px;"></i>Delete</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2801,46 +2822,67 @@ window.fetchAdminCustomers = () => {
             });
         });
     } catch(e) {
-        console.error("Error fetching admin customers:", e);
-        list.innerHTML = '<div style="color:red; padding: 20px;">Error loading customers.</div>';
+        console.error('Error fetching admin customers:', e);
+        list.innerHTML = '<div style="color:red;padding:20px;">Error loading customers.</div>';
     }
 };
 
 window.fetchAdminWorkers = () => {
     const list = document.getElementById('admin-workers-list');
-    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
-    
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading workers...</div>';
+
     if (unsubWorkers) unsubWorkers();
 
     try {
-        const q = query(collection(db, "customers"), where("role", "in", ["worker", "both"]));
-        unsubWorkers = onSnapshot(q, (workersSnap) => {
+        // Check workers collection first, fallback to customers with worker role
+        unsubWorkers = onSnapshot(collection(db, 'workers'), async (workerSnap) => {
             list.innerHTML = '';
-            if (workersSnap.empty) {
-                list.innerHTML = '<div style="text-align:center; padding: 20px;">No workers found.</div>';
+            let docs = [];
+            workerSnap.forEach(d => docs.push(d.data()));
+
+            // If workers collection empty, try customers collection with worker role
+            if (docs.length === 0) {
+                const q2 = query(collection(db, 'customers'), where('role', 'in', ['worker', 'both']));
+                const snap2 = await getDocs(q2);
+                snap2.forEach(d => docs.push(d.data()));
+            }
+
+            if (docs.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:30px;color:#888;"><i class="fa-solid fa-user-tie" style="font-size:32px;display:block;margin-bottom:10px;"></i>No workers found.</div>';
                 return;
             }
-            workersSnap.forEach(snapDoc => {
-                const data = snapDoc.data();
+
+            // Sort by name
+            docs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+            docs.forEach(data => {
+                const isBlocked = data.status === 'blocked';
+                const service = data.service || data.trade || '—';
                 const el = document.createElement('div');
                 el.className = 'admin-user-card';
+                el.style.cssText = 'border-left:4px solid #7B1FA2; margin-bottom:10px; border-radius:10px; padding:14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; align-items:center; gap:12px;';
                 el.innerHTML = `
-                    ${data.profileImage ? `<img src="${data.profileImage}" alt="Profile" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;flex-shrink:0;">` : `<div class="avatar-placeholder" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ccc; margin-right: 15px; flex-shrink:0;"><i class="fa-solid fa-circle-user"></i></div>`}
-                    <div class="admin-user-info" style="flex: 1;">
-                        <h4>${data.name} <span style="font-size: 10px; background: #eef; color: #44f; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">${data.service}</span></h4>
-                        <p>Email: ${data.email}</p>
-                        <p>Phone: ${data.phone} | Location: ${data.location}</p>
-                        <p style="color: ${data.status === 'blocked' ? 'red' : 'green'}; font-weight: bold; font-size: 11px;">Status: ${data.status ? data.status.toUpperCase() : 'ACTIVE'}</p>
+                    ${data.profileImage
+                        ? `<img src="${data.profileImage}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e0e0e0;">`
+                        : `<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6A1B9A,#AB47BC);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-user-tie" style="color:white;font-size:22px;"></i></div>`}
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                            <span style="font-weight:700;font-size:15px;color:#1a1a2e;">${data.name || 'Unknown'}</span>
+                            <span style="font-size:10px;font-weight:700;background:#EDE7F6;color:#6A1B9A;padding:2px 8px;border-radius:20px;">${service}</span>
+                        </div>
+                        <div style="font-size:12px;color:#555;margin-bottom:2px;"><i class="fa-solid fa-phone" style="color:#7B1FA2;width:14px;"></i> ${data.phone || '—'}</div>
+                        <div style="font-size:12px;color:#555;margin-bottom:2px;"><i class="fa-solid fa-location-dot" style="color:#7B1FA2;width:14px;"></i> ${data.location || data.city || '—'}</div>
+                        <div style="font-size:12px;color:#777;"><i class="fa-solid fa-envelope" style="color:#7B1FA2;width:14px;"></i> ${data.email || '—'}</div>
                     </div>
-                    <div class="admin-card-menu-container" style="position: relative;">
-                        <i class="fa-solid fa-ellipsis-vertical" style="padding: 10px; cursor: pointer; color: #666;" onclick="const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'block' ? 'none' : 'block';"></i>
-                        <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 120px; z-index: 10;">
-                            <button onclick="window.toggleBlockUser('${data.uid}', '${data.status === 'blocked' ? 'active' : 'blocked'}')" style="width: 100%; text-align: left; padding: 10px; border: none; background: none; cursor: pointer;">
-                                <i class="fa-solid fa-ban" style="color: orange; margin-right: 5px;"></i> ${data.status === 'blocked' ? 'Unblock' : 'Block'}
-                            </button>
-                            <button onclick="window.deleteAdminUser('${data.uid}')" style="width: 100%; text-align: left; padding: 10px; border: none; background: none; cursor: pointer; color: #d32f2f;">
-                                <i class="fa-solid fa-trash" style="margin-right: 5px;"></i> Delete
-                            </button>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                        <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${isBlocked ? '#FFEBEE' : '#F3E5F5'};color:${isBlocked ? '#C62828' : '#6A1B9A'};">${isBlocked ? 'BLOCKED' : 'ACTIVE'}</span>
+                        <div style="position:relative;">
+                            <i class="fa-solid fa-ellipsis-vertical" style="padding:8px;cursor:pointer;color:#999;" onclick="const m=this.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';"></i>
+                            <div style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.15);width:130px;z-index:50;">
+                                <button onclick="window.toggleBlockUser('${data.uid}','${isBlocked ? 'active' : 'blocked'}')" style="width:100%;text-align:left;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;"><i class="fa-solid fa-ban" style="color:orange;margin-right:6px;"></i>${isBlocked ? 'Unblock' : 'Block'}</button>
+                                <button onclick="window.deleteAdminUser('${data.uid}')" style="width:100%;text-align:left;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;color:#d32f2f;"><i class="fa-solid fa-trash" style="margin-right:6px;"></i>Delete</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2848,8 +2890,8 @@ window.fetchAdminWorkers = () => {
             });
         });
     } catch(e) {
-        console.error("Error fetching admin workers:", e);
-        list.innerHTML = '<div style="color:red; padding: 20px;">Error loading workers.</div>';
+        console.error('Error fetching admin workers:', e);
+        list.innerHTML = '<div style="color:red;padding:20px;">Error loading workers.</div>';
     }
 };
 
