@@ -3636,7 +3636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            container.innerHTML = '';
+            container.innerHTML = '<div style="text-align: center; font-size: 11px; color: #888; padding: 5px 0 10px 0; border-bottom: 1px solid #f0f0f0; margin-bottom: 5px;">Tap a conversation below to open chat</div>';
             
             if (chatsArray.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No conversations yet.</div>';
@@ -3664,6 +3664,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="inbox-item-details">
                         <div class="inbox-item-name">${otherName}</div>
                         <div class="inbox-item-preview">${isMyMsg ? 'You: ' : ''}${lastMsg.text}</div>
+                    </div>
+                    <div style="color: #bbb; font-size: 14px; padding-left: 10px;">
+                        <i class="fa-solid fa-chevron-right"></i>
                     </div>
                 `;
                 el.onclick = () => {
