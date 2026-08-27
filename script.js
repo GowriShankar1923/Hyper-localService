@@ -1057,6 +1057,8 @@ const logoutBtn = document.getElementById('logout-btn');
             if (customerServices) customerServices.style.display = 'block';
             if (workerDashboard) workerDashboard.style.display = 'none';
             if (releaseBtn) releaseBtn.style.display = 'none';
+            const lhBtn3 = document.getElementById('home-leave-history-btn');
+            if (lhBtn3) lhBtn3.style.display = 'none';
             currentCustomerLocation = location || 'Unknown Location';
             window.currentCustomerLocation = currentCustomerLocation;
 
