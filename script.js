@@ -1210,7 +1210,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     const sum = worker.ratings.reduce((acc, r) => acc + r.stars, 0);
                     avgRating = (sum / ratingCount).toFixed(1);
                 }
-                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px;"><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount})` : 'New'}</div>`;
+                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px; ${ratingCount > 0 ? 'cursor:pointer;' : ''}" ${ratingCount > 0 ? `onclick="window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')"` : ''}><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount}) <span style="color:var(--primary-blue); margin-left:4px; font-size:11px; text-decoration:underline;">View Comments</span>` : 'New'}</div>`;
 
                 card.innerHTML = `
                     <div class="service-image" style="background-image: url('${bgImage}'); position: relative;">
@@ -1311,7 +1311,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     const sum = worker.ratings.reduce((acc, r) => acc + r.stars, 0);
                     avgRating = (sum / ratingCount).toFixed(1);
                 }
-                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px;"><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount})` : 'New'}</div>`;
+                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px; ${ratingCount > 0 ? 'cursor:pointer;' : ''}" ${ratingCount > 0 ? `onclick="window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')"` : ''}><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount}) <span style="color:var(--primary-blue); margin-left:4px; font-size:11px; text-decoration:underline;">View Comments</span>` : 'New'}</div>`;
                 
                 card.innerHTML = `
                     ${mainImageHtml}
