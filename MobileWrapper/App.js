@@ -7,7 +7,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <WebView 
-        source={{ uri: 'http://10.245.214.146:3000' }} 
+        source={{ uri: 'http://10.245.214.146:3002/' }} 
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
