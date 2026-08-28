@@ -799,6 +799,9 @@ const logoutBtn = document.getElementById('logout-btn');
                 body: JSON.stringify({ email, otp })
             });
             const data = await response.json();
+            if (data.offline) {
+                alert(`OFFLINE MODE / NO INTERNET:\nThe email failed to send, but you can continue.\nYour OTP is: ${data.otp}`);
+            }
             if (data.simulated) console.log("OTP simulated:", data.otp);
             return data.success;
         } catch (error) {
