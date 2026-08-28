@@ -753,7 +753,7 @@ const logoutBtn = document.getElementById('logout-btn');
     //  sendOTP helper 
     async function sendOTP(email, otp) {
         try {
-            const response = await fetch('http://localhost:3001/send-otp', {
+            const response = await fetch(`http://${window.location.hostname}:3001/send-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, otp })
@@ -1770,7 +1770,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     }
                 } else {
                     if (booking.status === 'Pending') {
-                        actionsHtml += `<div class="dropdown-item cancel-job-btn-customer" data-id="${booking.id}" style="padding: 10px 15px; cursor: pointer; color: red;"> Cancel Order</div>`;
+                        actionsHtml += `<div class="dropdown-item cancel-job-btn-customer" onclick="window.cancelCustomerBooking('${booking.id}')" style="padding: 10px 15px; cursor: pointer; color: red;"> Cancel Order</div>`;
                     }
                     if (booking.status === 'PaymentPending') {
                         extraHtml += `
@@ -4180,5 +4180,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-comments-close')?.addEventListener('click', () => {
         document.getElementById('admin-comments-modal').style.display = 'none';
     });
+
+    window.cancelCustomerBooking = async (id) => {
+        if (confirm("Are you sure you want to cancel this order?")) {
+            try {
+                await updateDoc(doc(db, "bookings", id), { status: 'Canceled' });
+                
+                const bookingDoc = await getDoc(doc(db, "bookings", id));
+                if(bookingDoc.exists() && bookingDoc.data().workerId) {
+                    addNotification(bookingDoc.data().workerId, "A booking order was canceled by the customer.");
+                }
+            } catch (error) {
+                console.error("Error canceling order:", error);
+                alert("Failed to cancel order.");
+            }
+        }
+    };
 
 });
