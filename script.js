@@ -1161,7 +1161,7 @@ const logoutBtn = document.getElementById('logout-btn');
                         const workerLoc = data.location.toLowerCase().trim();
                         const userLoc = location.toLowerCase().trim();
                         if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
-                            workers.push({ id: data.uid || doc.id, docId: doc.id, ...data });
+                            workers.push({ id: doc.id, ...data });
                         }
                     }
                 }
@@ -1200,29 +1200,11 @@ const logoutBtn = document.getElementById('logout-btn');
                     btnHtml = `<div class="service-book-btn" style="background: #ccc; cursor: not-allowed; text-align: center;">Currently Busy</div>`;
                     statusBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #ffebee; color: red; border-radius: 4px; margin-left: 5px;">Busy</span>';
                 } else {
-                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-doc-id="${worker.docId || ''}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
+                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
                 }
                 
-                let avgRating = 0;
-                let ratingCount = 0;
-                if (worker.ratings && worker.ratings.length > 0) {
-                    ratingCount = worker.ratings.length;
-                    const sum = worker.ratings.reduce((acc, r) => acc + r.stars, 0);
-                    avgRating = (sum / ratingCount).toFixed(1);
-                }
-                
-                // Rapido/Swiggy-style rating badge on image
-                const ratingBadge = avgRating > 0
-                    ? `<div style="position:absolute; top:10px; right:10px; background:${avgRating >= 4 ? '#2e7d32' : avgRating >= 3 ? '#f57c00' : '#c62828'}; color:white; font-size:12px; font-weight:700; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:3px; box-shadow:0 2px 6px rgba(0,0,0,0.25);"><i class="fa-solid fa-star" style="font-size:10px;"></i> ${avgRating}</div>`
-                    : `<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.45); color:white; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px;">New</div>`;
-                
-                const reviewLink = ratingCount > 0
-                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:3px;"></i>${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
-                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')" ><i class="fa-regular fa-star" style="color:#ccc; margin-right:3px;"></i>No reviews yet &rsaquo;</div>`;
-
                 card.innerHTML = `
                     <div class="service-image" style="background-image: url('${bgImage}'); position: relative;">
-                        ${ratingBadge}
                         <div style="position: absolute; bottom: -20px; left: 15px;">
                             ${profileImg}
                         </div>
@@ -1230,8 +1212,7 @@ const logoutBtn = document.getElementById('logout-btn');
                     <div class="service-info" style="padding-top: 25px;">
                         <h4 style="margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">${worker.name} ${statusBadge}</h4>
                         <p style="color:var(--primary-blue);font-weight:500;font-size:13px;margin-bottom:5px;">${worker.service} Professional</p>
-                        <p style="font-size:12px;margin-bottom:4px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
-                        ${reviewLink}
+                        <p style="font-size:12px;margin-bottom:12px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
                         ${btnHtml}
                     </div>
                 `;
@@ -1310,40 +1291,15 @@ const logoutBtn = document.getElementById('logout-btn');
                     btnHtml = `<div class="service-book-btn" style="background: #ccc; cursor: not-allowed; text-align: center;">Currently Busy</div>`;
                     statusBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #ffebee; color: red; border-radius: 4px; margin-left: 5px;">Busy</span>';
                 } else {
-                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-doc-id="${worker.docId || ''}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
+                    btnHtml = `<div class="service-book-btn" data-service="${worker.service}" data-worker-id="${worker.id}" data-worker-name="${worker.name}">Book Now <i class="fa-solid fa-arrow-right"></i></div>`;
                 }
                 
-                let avgRating = 0;
-                let ratingCount = 0;
-                if (worker.ratings && worker.ratings.length > 0) {
-                    ratingCount = worker.ratings.length;
-                    const sum = worker.ratings.reduce((acc, r) => acc + r.stars, 0);
-                    avgRating = (sum / ratingCount).toFixed(1);
-                }
-                
-                // Rapido/Swiggy-style rating badge - overlay on main image
-                let mainImageWithBadge;
-                const ratingBadge2 = avgRating > 0
-                    ? `<div style="position:absolute; top:10px; right:10px; background:${avgRating >= 4 ? '#2e7d32' : avgRating >= 3 ? '#f57c00' : '#c62828'}; color:white; font-size:12px; font-weight:700; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:3px; box-shadow:0 2px 6px rgba(0,0,0,0.25);"><i class="fa-solid fa-star" style="font-size:10px;"></i> ${avgRating}</div>`
-                    : `<div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.45); color:white; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px;">New</div>`;
-
-                if (worker.profileImage) {
-                    mainImageWithBadge = `<div class="service-image" style="background-image: url('${worker.profileImage}'); background-size: cover; background-position: top; border-radius: 12px 12px 0 0; position:relative;">${ratingBadge2}</div>`;
-                } else {
-                    mainImageWithBadge = `<div class="service-image" style="background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; border-radius: 12px 12px 0 0; color: #ccc; font-size: 50px; position:relative;"><i class="fa-solid fa-user"></i>${ratingBadge2}</div>`;
-                }
-
-                const reviewLink2 = ratingCount > 0
-                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:3px;"></i>${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
-                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')" ><i class="fa-regular fa-star" style="color:#ccc; margin-right:3px;"></i>No reviews yet &rsaquo;</div>`;
-
                 card.innerHTML = `
-                    ${mainImageWithBadge}
+                    ${mainImageHtml}
                     <div class="service-info">
                         <h4 style="margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">${worker.name} ${statusBadge}</h4>
                         <p style="color:var(--primary-blue);font-weight:500;font-size:13px;margin-bottom:5px;">${worker.service} Professional</p>
-                        <p style="font-size:12px;margin-bottom:6px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
-                        ${reviewLink2}
+                        <p style="font-size:12px;margin-bottom:12px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
                         ${btnHtml}
                     </div>
                 `;
@@ -1389,10 +1345,8 @@ const logoutBtn = document.getElementById('logout-btn');
                     
                     if (workerLoc.includes(userLoc) || userLoc.includes(workerLoc)) {
                         // Deduplicate by UID or exact Name in case of multiple test profile documents
-                        if (!workers.find(w => w.uid === data.uid || (w.name && w.name === data.name))) {
-                            // Use data.uid as worker.id so workerId in bookings matches worker's auth UID
-                            // Also store docId for direct Firestore document operations (e.g. saving ratings)
-                            workers.push({ id: data.uid, docId: doc.id, ...data });
+                        if (!workers.find(w => w.id === data.uid || (w.name && w.name === data.name))) {
+                            workers.push({ id: data.uid, ...data });
                         }
                     }
                 }
@@ -1424,12 +1378,10 @@ const logoutBtn = document.getElementById('logout-btn');
                 currentServiceToBook = e.currentTarget.getAttribute('data-service');
                 const workerName = e.currentTarget.getAttribute('data-worker-name');
                 const workerId = e.currentTarget.getAttribute('data-worker-id');
-                const workerDocId = e.currentTarget.getAttribute('data-worker-doc-id') || '';
                 
                 bookingTitle.textContent = `Book ${workerName} (${currentServiceToBook})`;
-                // Store worker ID and docId for submission
+                // Store worker ID for submission if needed later
                 bookingForm.setAttribute('data-target-worker-id', workerId);
-                bookingForm.setAttribute('data-target-worker-doc-id', workerDocId);
                 
                 bookingModal.classList.remove('hidden');
                 setTimeout(() => bookingModal.classList.add('open'), 10);
@@ -1552,14 +1504,12 @@ const logoutBtn = document.getElementById('logout-btn');
 
             try {
                 const targetWorkerId = bookingForm.getAttribute('data-target-worker-id');
-                const targetWorkerDocId = bookingForm.getAttribute('data-target-worker-doc-id') || '';
                 // Ensure chat deletion is canceled when a new booking is created
                 if (window.cancelChatDeletion) window.cancelChatDeletion(user.uid, targetWorkerId);
 
                 await addDoc(collection(db, "bookings"), {
                     userId: user.uid,
                     workerId: targetWorkerId,
-                    workerDocId: targetWorkerDocId,
                     service: currentServiceToBook,
                     date: date,
                     address: fullAddress,
@@ -1953,6 +1903,21 @@ const logoutBtn = document.getElementById('logout-btn');
                     };
                 });
 
+                document.querySelectorAll('#my-bookings-list .cancel-job-btn-customer').forEach(btn => {
+                    btn.onclick = async () => {
+                        if (confirm("Are you sure you want to cancel this order?")) {
+                            const id = btn.getAttribute('data-id');
+                            await updateDoc(doc(db, "bookings", id), { status: 'Canceled' });
+                            fetchBookings(userId);
+                            
+                            const bookingDoc = await getDoc(doc(db, "bookings", id));
+                            if(bookingDoc.exists() && bookingDoc.data().workerId) {
+                                addNotification(bookingDoc.data().workerId, "A booking order was canceled by the customer.");
+                            }
+                        }
+                    };
+                });
+
                 document.querySelectorAll('#my-bookings-list .reached-job-btn').forEach(btn => {
                     btn.onclick = async () => {
                         const id = btn.getAttribute('data-id');
@@ -2017,16 +1982,6 @@ const logoutBtn = document.getElementById('logout-btn');
 
             history.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
             historyList.innerHTML = '';
-            
-            // Pre-fetch all worker data for the history list
-            const workerIds = [...new Set(history.map(b => b.workerId).filter(Boolean))];
-            const workerDataMap = {};
-            
-            await Promise.all(workerIds.map(async (wId) => {
-                let wDoc = await getDoc(doc(db, 'customers', wId));
-                if (!wDoc.exists()) wDoc = await getDoc(doc(db, 'workers', wId));
-                if (wDoc.exists()) workerDataMap[wId] = wDoc.data();
-            }));
 
             history.forEach(booking => {
                 const card = document.createElement('div');
@@ -2034,45 +1989,6 @@ const logoutBtn = document.getElementById('logout-btn');
                 card.style.cursor = 'pointer'; // Make it look clickable
                 const dateObj = new Date(booking.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                
-                let workerNameStr = 'Unknown Worker';
-                let ratingDisplayHtml = '';
-                
-                if (booking.workerId && workerDataMap[booking.workerId]) {
-                    const wData = workerDataMap[booking.workerId];
-                    workerNameStr = wData.name || 'Worker';
-                    
-                    if (booking.isRated) {
-                        const ratings = wData.ratings || [];
-                        // Try to find by bookingId first (new ratings), otherwise take the most recent
-                        let myRating = ratings.find(r => r.bookingId === booking.id);
-                        if (!myRating && ratings.length > 0) {
-                            // Fallback: show the most recent rating for this worker
-                            myRating = [...ratings].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                        }
-                        if (myRating) {
-                            const starIcons = Array.from({length: 5}, (_, i) =>
-                                `<i class="fa-solid fa-star" style="color:${i < myRating.stars ? '#FFD700' : '#ddd'}; font-size:13px;"></i>`
-                            ).join('');
-                            ratingDisplayHtml = `
-                                <div style="margin-top:12px; padding:10px 12px; background:#f5f7fa; border-radius:8px; border:1px solid #e4e7eb; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                        <span style="font-size:12px; font-weight:600; color:#444;"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:4px;"></i>Your Rating</span>
-                                        <span style="font-size:11px; color:var(--primary-blue); text-decoration:underline;">View All Comments</span>
-                                    </div>
-                                    <div style="margin-bottom:4px;">${starIcons}</div>
-                                    ${myRating.comment ? `<div style="font-size:12px; color:#666; font-style:italic; margin-top:4px;">"${myRating.comment}"</div>` : ''}
-                                </div>
-                            `;
-                        } else {
-                            ratingDisplayHtml = `
-                                <div style="margin-top:12px; font-size:12px; color:var(--primary-blue); cursor:pointer; text-decoration:underline;" onclick="event.stopPropagation(); window.openAdminComments('${booking.workerId}', '${workerNameStr.replace(/'/g, "\\'")}')">
-                                    <i class="fa-solid fa-star" style="color:#FFD700; margin-right:4px;"></i>View Worker Ratings &amp; Comments
-                                </div>
-                            `;
-                        }
-                    }
-                }
                 
                 card.onclick = () => {
                     const modal = document.getElementById('receipt-modal');
@@ -2092,35 +2008,18 @@ const logoutBtn = document.getElementById('logout-btn');
                 
                 const imgHtml = booking.image ? `<img src="${booking.image}" class="booking-image-thumb" alt="Problem Image">` : '';
                 
-                let ratingMenu = '';
-                if (booking.status === 'Completed' && booking.userId === userId && !booking.isRated && booking.workerId) {
-                    ratingMenu = `
-                        <div style="position:relative;">
-                            <i class="fa-solid fa-ellipsis-vertical" style="padding: 5px 10px; cursor: pointer; color: #999;" onclick="event.stopPropagation(); const m=this.nextElementSibling; m.style.display=m.style.display==='block'?'none':'block';"></i>
-                            <div style="display:none; position:absolute; right:0; top:100%; background:white; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.15); width:130px; z-index:50;">
-                                <button onclick="event.stopPropagation(); window.openRatingModal('${booking.id}', '${booking.workerId}', '${booking.workerDocId || ''}')" style="width:100%; text-align:left; padding:10px 14px; border:none; background:none; cursor:pointer; font-size:13px; color:var(--primary-blue);"><i class="fa-solid fa-star" style="margin-right:6px;"></i> Rate Worker</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                
                 card.innerHTML = `
                     <div class="booking-header">
                         <span class="booking-service">${booking.service}</span>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            ${ratingMenu}
-                            <span class="booking-status" style="color: ${statusColor}; background: ${statusBg};">${booking.status}</span>
-                        </div>
+                        <span class="booking-status" style="color: ${statusColor}; background: ${statusBg};">${booking.status}</span>
                     </div>
                     <div class="booking-details">
                         <div class="booking-info">
-                            <div style="font-weight:600; color:#333; margin-bottom:4px; font-size:14px;"><i class="fa-solid fa-user-tie" style="color:var(--primary-blue); margin-right:4px;"></i> ${workerNameStr}</div>
                             <div><i class="fa-solid fa-calendar-days"></i> ${formattedDate}</div>
                             ${!isCanceled ? `<div><i class="fa-solid fa-indian-rupee-sign"></i> Paid: ${booking.amount || 0}</div>` : ''}
                         </div>
                         ${imgHtml}
                     </div>
-                    ${ratingDisplayHtml}
                 `;
                 historyList.appendChild(card);
             });
@@ -2865,18 +2764,6 @@ window.fetchAdminWorkers = () => {
             docs.forEach(data => {
                 const isBlocked = data.status === 'blocked';
                 const service = data.service || data.trade || '—';
-                
-                let avgRating = 0;
-                let ratingCount = 0;
-                if (data.ratings && data.ratings.length > 0) {
-                    ratingCount = data.ratings.length;
-                    const sum = data.ratings.reduce((acc, r) => acc + r.stars, 0);
-                    avgRating = (sum / ratingCount).toFixed(1);
-                }
-                
-                let ratingHtml = `<div style="font-size:12px;color:#555;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><i class="fa-solid fa-star" style="color:#FFD700;"></i> ${avgRating > 0 ? `<strong>${avgRating}</strong> (${ratingCount} ratings)` : 'No ratings yet'}</div>`;
-                let commentsBtnHtml = ratingCount > 0 ? `<div style="font-size:12px; margin-top:2px;"><a href="#" onclick="event.preventDefault(); window.openAdminComments('${data.uid}', '${(data.name || 'Worker').replace(/'/g, "\\'")}')" style="color:var(--primary-blue); text-decoration:underline;">View Comments</a></div>` : '';
-
                 const el = document.createElement('div');
                 el.className = 'admin-user-card';
                 el.style.cssText = 'border-left:4px solid #7B1FA2; margin-bottom:10px; border-radius:10px; padding:14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; align-items:center; gap:12px;';
@@ -2891,9 +2778,7 @@ window.fetchAdminWorkers = () => {
                         </div>
                         <div style="font-size:12px;color:#555;margin-bottom:2px;"><i class="fa-solid fa-phone" style="color:#7B1FA2;width:14px;"></i> ${data.phone || '—'}</div>
                         <div style="font-size:12px;color:#555;margin-bottom:2px;"><i class="fa-solid fa-location-dot" style="color:#7B1FA2;width:14px;"></i> ${data.location || data.city || '—'}</div>
-                        <div style="font-size:12px;color:#777;margin-bottom:2px;"><i class="fa-solid fa-envelope" style="color:#7B1FA2;width:14px;"></i> ${data.email || '—'}</div>
-                        ${ratingHtml}
-                        ${commentsBtnHtml}
+                        <div style="font-size:12px;color:#777;"><i class="fa-solid fa-envelope" style="color:#7B1FA2;width:14px;"></i> ${data.email || '—'}</div>
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
                         <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${isBlocked ? '#FFEBEE' : '#F3E5F5'};color:${isBlocked ? '#C62828' : '#6A1B9A'};">${isBlocked ? 'BLOCKED' : 'ACTIVE'}</span>
@@ -3887,283 +3772,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // --- RATING SYSTEM LOGIC ---
-    let currentRatingBookingId = null;
-    let currentRatingWorkerId = null;
-    let currentRatingStars = 0;
-
-    let currentRatingWorkerDocId = null;
-
-    window.openRatingModal = (bookingId, workerId, workerDocId) => {
-        currentRatingBookingId = bookingId;
-        currentRatingWorkerId = workerId;
-        currentRatingWorkerDocId = workerDocId || null;
-        currentRatingStars = 0;
-        
-        // Reset stars
-        document.querySelectorAll('#rating-stars-container i').forEach(star => {
-            star.style.color = '#ddd';
-        });
-        document.getElementById('rating-label').textContent = 'Select a rating';
-        document.getElementById('rating-comment').value = '';
-        
-        document.getElementById('rating-modal').style.display = 'flex';
-    };
-
-    document.getElementById('btn-rating-close')?.addEventListener('click', () => {
-        document.getElementById('rating-modal').style.display = 'none';
-    });
-
-    const ratingLabels = {
-        1: 'Bad',
-        2: 'Average',
-        3: 'Good',
-        4: 'Very Good',
-        5: 'Excellent'
-    };
-
-    document.querySelectorAll('#rating-stars-container i').forEach(star => {
-        star.addEventListener('click', (e) => {
-            const val = parseInt(e.target.getAttribute('data-val'));
-            currentRatingStars = val;
-            
-            document.querySelectorAll('#rating-stars-container i').forEach(s => {
-                const sVal = parseInt(s.getAttribute('data-val'));
-                s.style.color = sVal <= val ? '#FFD700' : '#ddd';
-            });
-            
-            document.getElementById('rating-label').textContent = ratingLabels[val];
-        });
-    });
-
-    document.getElementById('btn-rating-submit')?.addEventListener('click', async () => {
-        if (currentRatingStars === 0) {
-            alert('Please select a rating star first.');
-            return;
-        }
-        if (!currentRatingBookingId || !currentRatingWorkerId) return;
-
-        const commentText = document.getElementById('rating-comment').value.trim();
-        const submitBtn = document.getElementById('btn-rating-submit');
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-        submitBtn.disabled = true;
-
-        try {
-            const customerName = auth.currentUser?.displayName || 'Customer';
-
-            const ratingData = {
-                stars: currentRatingStars,
-                comment: commentText,
-                customerName: customerName,
-                bookingId: currentRatingBookingId,
-                date: new Date().toISOString()
-            };
-
-            // Find the actual Firestore document for this worker
-            let workerRef = null;
-            
-            // Try 0: use workerDocId directly if available (most reliable — actual Firestore doc ID)
-            if (currentRatingWorkerDocId) {
-                const docIdRef = doc(db, 'customers', currentRatingWorkerDocId);
-                const docIdSnap = await getDoc(docIdRef);
-                if (docIdSnap.exists()) {
-                    workerRef = docIdRef;
-                    console.log('Rating: found worker by workerDocId (best match)');
-                }
-            }
-            
-            // Try 1: direct doc.id lookup in customers (works when workerId = doc.id)
-            if (!workerRef) {
-                const directCustomerRef = doc(db, 'customers', currentRatingWorkerId);
-                const directCustomerSnap = await getDoc(directCustomerRef);
-                if (directCustomerSnap.exists()) {
-                    workerRef = directCustomerRef;
-                    console.log('Rating: found worker by doc.id in customers');
-                }
-            }
-            
-            // Try 2: query customers by uid field (works when workerId = auth uid)
-            if (!workerRef) {
-                const workerQuery = query(collection(db, 'customers'), where('uid', '==', currentRatingWorkerId));
-                const workerSnap = await getDocs(workerQuery);
-                if (!workerSnap.empty) {
-                    workerRef = workerSnap.docs[0].ref;
-                    console.log('Rating: found worker by uid query in customers');
-                }
-            }
-            
-            // Try 3: direct doc.id lookup in workers collection
-            if (!workerRef) {
-                const directWorkerRef = doc(db, 'workers', currentRatingWorkerId);
-                const directWorkerSnap = await getDoc(directWorkerRef);
-                if (directWorkerSnap.exists()) {
-                    workerRef = directWorkerRef;
-                    console.log('Rating: found worker by doc.id in workers');
-                }
-            }
-            
-            // Try 4: query workers collection by uid
-            if (!workerRef) {
-                const workerQuery2 = query(collection(db, 'workers'), where('uid', '==', currentRatingWorkerId));
-                const workerSnap2 = await getDocs(workerQuery2);
-                if (!workerSnap2.empty) {
-                    workerRef = workerSnap2.docs[0].ref;
-                    console.log('Rating: found worker by uid query in workers');
-                }
-            }
-            
-            if (!workerRef) {
-                console.error('Rating: Could not find worker document. workerId:', currentRatingWorkerId);
-                throw new Error('Worker not found. Please try again.');
-            }
-            
-            await updateDoc(workerRef, {
-                ratings: arrayUnion(ratingData)
-            });
-            console.log('Rating saved successfully to:', workerRef.path);
-
-            const bookingRef = doc(db, 'bookings', currentRatingBookingId);
-            await updateDoc(bookingRef, {
-                isRated: true
-            });
-
-            document.getElementById('rating-modal').style.display = 'none';
-            alert('Thank you! Your rating has been submitted.');
-            
-            // Re-fetch history to remove the rating button
-            if (auth.currentUser) fetchHistory(auth.currentUser.uid);
-
-        } catch (error) {
-            console.error('Error submitting rating:', error);
-            alert('Failed to submit rating. Please try again.');
-        } finally {
-            submitBtn.innerHTML = 'Submit Rating';
-            submitBtn.disabled = false;
-        }
-    });
-
-    // Ratings & Reviews Modal Logic (Amazon/Flipkart style)
-    window.openAdminComments = async (workerId, workerName) => {
-        const modal = document.getElementById('admin-comments-modal');
-        const listContainer = document.getElementById('admin-comments-list');
-        const titleEl = document.getElementById('comments-modal-title');
-        if (titleEl) titleEl.textContent = workerName ? `${workerName} — Reviews` : 'Ratings & Reviews';
-        listContainer.innerHTML = '<div style="text-align:center; padding: 30px;"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px; color:#ccc;"></i></div>';
-        modal.style.display = 'flex';
-
-        try {
-            let ratingsData = null;
-
-            const qCustomer = query(collection(db, 'customers'), where('uid', '==', workerId));
-            const snapCustomer = await getDocs(qCustomer);
-            if (!snapCustomer.empty) {
-                ratingsData = snapCustomer.docs[0].data();
-            } else {
-                const qWorker = query(collection(db, 'workers'), where('uid', '==', workerId));
-                const snapWorker = await getDocs(qWorker);
-                if (!snapWorker.empty) {
-                    ratingsData = snapWorker.docs[0].data();
-                } else {
-                    let workerDoc = await getDoc(doc(db, 'customers', workerId));
-                    if (!workerDoc.exists()) workerDoc = await getDoc(doc(db, 'workers', workerId));
-                    if (workerDoc.exists()) ratingsData = workerDoc.data();
-                }
-            }
-
-            if (!ratingsData) {
-                listContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">Worker not found.</div>';
-                return;
-            }
-
-            const ratings = (ratingsData.ratings || []).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            if (ratings.length === 0) {
-                listContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#888;"><i class="fa-solid fa-star" style="font-size:32px; color:#ddd; display:block; margin-bottom:12px;"></i>No ratings yet. Be the first to review!</div>';
-                return;
-            }
-
-            // Calculate stats
-            const total = ratings.length;
-            const avgRaw = ratings.reduce((s, r) => s + r.stars, 0) / total;
-            const avg = avgRaw.toFixed(1);
-            const starCounts = [0, 0, 0, 0, 0]; // index 0 = 1-star
-            ratings.forEach(r => { if (r.stars >= 1 && r.stars <= 5) starCounts[r.stars - 1]++; });
-
-            // Summary block
-            const filledStars = Math.round(avgRaw);
-            const summaryStarsHtml = Array.from({length: 5}, (_, i) =>
-                `<i class="fa-solid fa-star" style="color:${i < filledStars ? '#FFD700' : '#ddd'}; font-size:18px;"></i>`
-            ).join('');
-
-            const barHtml = [5, 4, 3, 2, 1].map(star => {
-                const count = starCounts[star - 1];
-                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                const barColor = star >= 4 ? '#2e7d32' : star === 3 ? '#f57c00' : '#c62828';
-                return `
-                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
-                        <span style="font-size:12px; color:#555; min-width:10px;">${star}</span>
-                        <i class="fa-solid fa-star" style="color:#FFD700; font-size:11px;"></i>
-                        <div style="flex:1; background:#eee; border-radius:4px; height:8px; overflow:hidden;">
-                            <div style="width:${pct}%; background:${barColor}; height:100%; border-radius:4px; transition:width 0.4s;"></div>
-                        </div>
-                        <span style="font-size:12px; color:#888; min-width:18px;">${count}</span>
-                    </div>
-                `;
-            }).join('');
-
-            // Individual reviews
-            const reviewsHtml = ratings.map(r => {
-                const starsHtml = Array.from({length: 5}, (_, i) =>
-                    `<i class="fa-solid fa-star" style="color:${i < r.stars ? '#FFD700' : '#ddd'}; font-size:13px;"></i>`
-                ).join('');
-                const label = ratingLabels[r.stars] || '';
-                const dateStr = new Date(r.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-                return `
-                    <div style="padding:14px 16px; border-bottom:1px solid #f3f3f3;">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                            <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#1565C0,#42A5F5); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                <i class="fa-solid fa-user" style="color:white; font-size:13px;"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:13px; font-weight:700; color:#222;">${r.customerName || 'Customer'}</div>
-                                <div style="font-size:11px; color:#aaa;">${dateStr}</div>
-                            </div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                            <div style="background:${r.stars >= 4 ? '#2e7d32' : r.stars >= 3 ? '#f57c00' : '#c62828'}; color:white; font-size:12px; font-weight:700; padding:2px 8px; border-radius:12px; display:flex; align-items:center; gap:3px;">
-                                ${r.stars} <i class="fa-solid fa-star" style="font-size:10px;"></i>
-                            </div>
-                            <span style="font-size:12px; color:#666; font-weight:500;">${label}</span>
-                        </div>
-                        ${r.comment ? `<div style="font-size:13px; color:#444; line-height:1.5; background:#f9f9f9; padding:8px 10px; border-radius:8px; border-left:3px solid #FFD700;">${r.comment}</div>` : '<div style="font-size:12px; color:#bbb; font-style:italic;">No written review</div>'}
-                    </div>
-                `;
-            }).join('');
-
-            listContainer.innerHTML = `
-                <!-- Amazon/Flipkart Summary Header -->
-                <div style="padding:20px 16px; background:linear-gradient(135deg,#f8f9fa,#fff); border-bottom:1px solid #eee;">
-                    <div style="display:flex; gap:20px; align-items:center;">
-                        <div style="text-align:center; flex-shrink:0;">
-                            <div style="font-size:48px; font-weight:800; color:#222; line-height:1;">${avg}</div>
-                            <div style="margin:4px 0;">${summaryStarsHtml}</div>
-                            <div style="font-size:12px; color:#888;">${total} rating${total > 1 ? 's' : ''}</div>
-                        </div>
-                        <div style="flex:1;">${barHtml}</div>
-                    </div>
-                </div>
-                <!-- Individual Reviews -->
-                <div style="padding-bottom:20px;">${reviewsHtml}</div>
-            `;
-        } catch (error) {
-            console.error('Error fetching comments:', error);
-            listContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: red;">Error loading reviews.</div>';
-        }
-    };
-
-    document.getElementById('btn-comments-close')?.addEventListener('click', () => {
-        document.getElementById('admin-comments-modal').style.display = 'none';
-    });
 
 });
