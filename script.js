@@ -331,6 +331,55 @@ const logoutBtn = document.getElementById('logout-btn');
         homeLogoutBtn.addEventListener('click', handleLogout);
     }
 
+    if (workerDashboardDropdown) {
+        document.addEventListener('click', (e) => {
+            if (!workerDashboardDropdown.contains(e.target) && e.target !== workerDashboardMenuDots) {
+                workerDashboardDropdown.style.display = 'none';
+            }
+        });
+        workerDashboardMenuDots.addEventListener('click', (e) => {
+            e.stopPropagation();
+            workerDashboardDropdown.style.display = workerDashboardDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+    }
+
+    const cancelLeaveBtn = document.getElementById('cancel-leave-btn');
+    if (cancelLeaveBtn) {
+        cancelLeaveBtn.addEventListener('click', async () => {
+            workerDashboardDropdown.style.display = 'none';
+            if (confirm("Are you sure you want to cancel your leave?")) {
+                try {
+                    await updateDoc(doc(db, "workers", auth.currentUser.uid), { leave: null });
+                    alert("Leave canceled successfully!");
+                    fetchActiveLeaveStatus(auth.currentUser.uid);
+                } catch(e) {
+                    console.error("Error canceling leave", e);
+                    alert("Failed to cancel leave.");
+                }
+            }
+        });
+    }
+
+    const workerLeaveHistoryBtn = document.getElementById('worker-leave-history-btn');
+    if (workerLeaveHistoryBtn) {
+        workerLeaveHistoryBtn.addEventListener('click', () => {
+            workerDashboardDropdown.style.display = 'none';
+            document.getElementById('leave-history-modal').style.display = 'flex';
+            fetchAndPopulateLeaveHistory(auth.currentUser.uid);
+        });
+    }
+
+    const workerMyRatingsBtn = document.getElementById('worker-my-ratings-btn');
+    if (workerMyRatingsBtn) {
+        workerMyRatingsBtn.addEventListener('click', () => {
+            workerDashboardDropdown.style.display = 'none';
+            if (auth.currentUser) {
+                const currentUserName = auth.currentUser.displayName || 'Worker';
+                window.openAdminComments(auth.currentUser.uid, currentUserName);
+            }
+        });
+    }
+
     const homeReleaseBtn = document.getElementById('home-release-worker-btn');
     if (homeReleaseBtn) {
         homeReleaseBtn.addEventListener('click', async () => {
@@ -1334,8 +1383,25 @@ const logoutBtn = document.getElementById('logout-btn');
                 }
 
                 const reviewLink2 = ratingCount > 0
-                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:3px;"></i>${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
-                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\'")}')" ><i class="fa-regular fa-star" style="color:#ccc; margin-right:3px;"></i>No reviews yet &rsaquo;</div>`;
+                    ? `<div style="font-size:12px; color:#888; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')"><i class="fa-solid fa-star" style="color:#FFD700; margin-right:3px;"></i>${ratingCount} review${ratingCount > 1 ? 's' : ''} &rsaquo;</div>`
+                    : `<div style="font-size:12px; color:#aaa; margin-bottom:8px; cursor:pointer;" onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')" ><i class="fa-regular fa-star" style="color:#ccc; margin-right:3px;"></i>No reviews yet &rsaquo;</div>`;
+
+                let latestReviewSnippet = '';
+                if (worker.ratings && worker.ratings.length > 0) {
+                    const sortedRatings = [...worker.ratings].sort((a, b) => new Date(b.date) - new Date(a.date));
+                    const latest = sortedRatings[0];
+                    if (latest.comment) {
+                        const starIcons = Array.from({length: 5}, (_, i) =>
+                            `<i class="fa-solid fa-star" style="color:${i < latest.stars ? '#FFD700' : '#ddd'}; font-size:10px;"></i>`
+                        ).join('');
+                        latestReviewSnippet = `
+                            <div style="margin-top: 8px; margin-bottom: 8px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #FFD700; font-size: 12px; color: #555;">
+                                <div style="margin-bottom: 4px;">${starIcons} <strong style="color:#333; margin-left: 4px;">${latest.customerName || 'Customer'}</strong></div>
+                                <em style="color:#666;">"${latest.comment}"</em>
+                            </div>
+                        `;
+                    }
+                }
 
                 card.innerHTML = `
                     ${mainImageWithBadge}
@@ -1344,6 +1410,7 @@ const logoutBtn = document.getElementById('logout-btn');
                         <p style="color:var(--primary-blue);font-weight:500;font-size:13px;margin-bottom:5px;">${worker.service} Professional</p>
                         <p style="font-size:12px;margin-bottom:6px;"><i class="fa-solid fa-location-dot"></i> ${worker.location}</p>
                         ${reviewLink2}
+                        ${latestReviewSnippet}
                         ${btnHtml}
                     </div>
                 `;
@@ -2112,8 +2179,8 @@ const logoutBtn = document.getElementById('logout-btn');
                     ratingMenu = `
                         <div style="position:relative;">
                             <i class="fa-solid fa-ellipsis-vertical" style="padding: 5px 10px; cursor: pointer; color: #999;" onclick="event.stopPropagation(); const m=this.nextElementSibling; m.style.display=m.style.display==='block'?'none':'block';"></i>
-                            <div style="display:none; position:absolute; right:0; top:100%; background:white; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.15); width:130px; z-index:50;">
-                                <button onclick="event.stopPropagation(); window.openRatingModal('${booking.id}', '${booking.workerId}', '${booking.workerDocId || ''}')" style="width:100%; text-align:left; padding:10px 14px; border:none; background:none; cursor:pointer; font-size:13px; color:var(--primary-blue);"><i class="fa-solid fa-star" style="margin-right:6px;"></i> Rate Worker</button>
+                            <div style="display:none; position:absolute; right:0; top:100%; background:white; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.15); width:150px; z-index:50;">
+                                <button onclick="event.stopPropagation(); window.openRatingModal('${booking.id}', '${booking.workerId}', '${booking.workerDocId || ''}')" style="width:100%; text-align:left; padding:10px 14px; border:none; background:none; cursor:pointer; font-size:13px; color:var(--primary-blue);"><i class="fa-solid fa-star" style="margin-right:6px;"></i> Rate & Comment</button>
                             </div>
                         </div>
                     `;
