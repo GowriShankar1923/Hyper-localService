@@ -1953,6 +1953,21 @@ const logoutBtn = document.getElementById('logout-btn');
                     };
                 });
 
+                document.querySelectorAll('#my-bookings-list .cancel-job-btn-customer').forEach(btn => {
+                    btn.onclick = async () => {
+                        if (confirm("Are you sure you want to cancel this order?")) {
+                            const id = btn.getAttribute('data-id');
+                            await updateDoc(doc(db, "bookings", id), { status: 'Canceled' });
+                            fetchBookings(userId);
+                            
+                            const bookingDoc = await getDoc(doc(db, "bookings", id));
+                            if(bookingDoc.exists() && bookingDoc.data().workerId) {
+                                addNotification(bookingDoc.data().workerId, "A booking order was canceled by the customer.");
+                            }
+                        }
+                    };
+                });
+
                 document.querySelectorAll('#my-bookings-list .reached-job-btn').forEach(btn => {
                     btn.onclick = async () => {
                         const id = btn.getAttribute('data-id');
