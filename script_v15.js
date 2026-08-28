@@ -1386,7 +1386,7 @@ const logoutBtn = document.getElementById('logout-btn');
                             `<i class="fa-solid fa-star" style="color:${i < latest.stars ? '#FFD700' : '#ddd'}; font-size:10px;"></i>`
                         ).join('');
                         latestReviewSnippet = `
-                            <div style="margin-top: 8px; margin-bottom: 8px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #FFD700; font-size: 12px; color: #555;">
+                            <div onclick="event.stopPropagation(); window.openAdminComments('${worker.id}', '${(worker.name || 'Worker').replace(/'/g, "\\'")}')" style="margin-top: 8px; margin-bottom: 8px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #FFD700; font-size: 12px; color: #555; cursor: pointer;">
                                 <div style="margin-bottom: 4px;">${starIcons} <strong style="color:#333; margin-left: 4px;">${latest.customerName || 'Customer'}</strong></div>
                                 <em style="color:#666;">"${latest.comment}"</em>
                             </div>
