@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hyperlocal-v12';
+const CACHE_NAME = 'hyperlocal-v14';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
