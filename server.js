@@ -54,9 +54,8 @@ app.post('/send-otp', async (req, res) => {
         console.log(`Email successfully sent to ${email} (OTP: ${otp})`);
         res.json({ success: true, message: 'OTP sent successfully' });
     } catch (error) {
-        console.error('Error sending real email (Fallback to offline mode):', error);
-        // Fallback: If no internet or network blocks SMTP, return the OTP to the frontend
-        res.json({ success: true, simulated: true, otp: otp, message: 'Offline Mode: Email blocked by network' });
+        console.error('Error sending real email:', error);
+        res.json({ success: false, message: 'Failed to send OTP email. Please try again later.' });
     }
 });
 
