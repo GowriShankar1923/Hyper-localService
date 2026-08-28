@@ -331,17 +331,8 @@ const logoutBtn = document.getElementById('logout-btn');
         homeLogoutBtn.addEventListener('click', handleLogout);
     }
 
-    if (workerDashboardDropdown) {
-        document.addEventListener('click', (e) => {
-            if (!workerDashboardDropdown.contains(e.target) && e.target !== workerDashboardMenuDots) {
-                workerDashboardDropdown.style.display = 'none';
-            }
-        });
-        workerDashboardMenuDots.addEventListener('click', (e) => {
-            e.stopPropagation();
-            workerDashboardDropdown.style.display = workerDashboardDropdown.style.display === 'block' ? 'none' : 'block';
-        });
-    }
+    const workerDashboardDropdown = document.getElementById('worker-dashboard-dropdown');
+    const workerDashboardMenuDots = document.getElementById('worker-dashboard-menu-dots');
 
     const cancelLeaveBtn = document.getElementById('cancel-leave-btn');
     if (cancelLeaveBtn) {
